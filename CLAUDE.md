@@ -15,8 +15,13 @@ pnpm workspaces. Two real apps; `apps/cli/` and `packages/core/` are intentional
 ```
 apps/extension/    # Chrome MV3 extension (WXT)
 apps/web/          # Landing page (Astro 5 + Tailwind v4)
-docs/              # Spec, brand, copy, deploy, analytics
+docs/              # Spec, brand, deploy, analytics
 ```
+
+## Requirements
+
+- **Node**: version pinned in `.nvmrc` (currently `v24.13.0`). Engines field requires `>= 22`.
+- **pnpm**: pinned via `packageManager` (`pnpm@11.1.2`). Engines field requires `>= 11`.
 
 ## Commands
 
@@ -29,11 +34,15 @@ pnpm dev:web           # Astro dev at http://localhost:4321/trakdown/
 pnpm build:ext         # → apps/extension/.output/chrome-mv3/
 pnpm build:web         # → apps/web/dist/
 pnpm build             # build all packages
+pnpm lint              # Biome lint + format check (uses biome.json)
+pnpm lint:fix          # apply Biome's auto-fixable issues
+pnpm lint:ci           # `biome ci` (CI-tuned variant — used by GitHub Actions)
+pnpm format            # format only
 ```
 
 Per-package scripts (`apps/extension/`, `apps/web/`): `dev`, `build`, plus `zip` (extension) and `preview` + `check` (web).
 
-There is no test runner and no linter wired up — adding them is fine but no existing config to honor.
+There is no test runner. Linting + formatting is handled by **Biome 2.x** (`biome.json` at the repo root). `.astro` files are intentionally excluded — Astro's own tooling handles them while Biome's Astro support stabilises.
 
 ## Extension architecture
 
@@ -71,6 +80,17 @@ When adding new asset references (favicon, og-image, sitemap, internal links), u
 
 `UMAMI_WEBSITE_ID` is a repo *Variable* (not Secret — the website ID is rendered into the page HTML, not a credential). Read in `Base.astro` frontmatter via `import.meta.env.UMAMI_WEBSITE_ID` — that runs server-side during build, so no `PUBLIC_` prefix is needed (the value lands in static HTML, not the client JS bundle). Click events use Umami's `data-umami-event` attribute auto-discovery; scroll-depth and section-view events live in `apps/web/src/components/Analytics.astro`. Each major `<section>` carries a `data-section` attribute that the IntersectionObserver reads.
 
+## CI / GitHub Actions
+
+Two workflows in `.github/workflows/`:
+
+- **`deploy-web.yml`** — builds + deploys `apps/web` to GitHub Pages. Pipeline: composite-setup → `pnpm lint:ci` → `pnpm -F @trakdown/web build` → `actions/upload-pages-artifact` → `actions/deploy-pages`. Deploy job is gated on `push: main` or `workflow_dispatch`; PR triggers run build only.
+- **`pull_request.yml`** — three parallel PR-only jobs: GitLeaks (secret scan, needs `fetch-depth: 0`), Bearer (vulnerability scan; critical/high fails, medium/low warns), and Biome lint via `pnpm lint:ci`.
+
+Shared composite action at `.github/actions/setup-node/action.yml` handles install: `pnpm/action-setup@v4` (reads pnpm version from `packageManager`) → `actions/setup-node@v4` (reads Node from `.nvmrc`) → `pnpm install --frozen-lockfile`. **Composite actions require `shell: bash` on every `run:` step** — easy to forget, breaks at runtime if missed.
+
+Dependabot config in `.github/dependabot.yml` runs in security-alerts-only mode (`open-pull-requests-limit: 0`). No routine version-update PRs but Dependabot Alerts on the Security tab still surface advisories. The npm ecosystem uses `directory: "/"` (single root entry — pnpm workspaces share one lockfile); github-actions has two separate entries (one for workflows, one for the composite action).
+
 ## Brand — locked, do not regress
 
 Full spec: `docs/marketing/brand.md`.
@@ -87,13 +107,27 @@ Full spec: `docs/marketing/brand.md`.
 - Lime on dark surface (read as "black-and-white hacker")
 - FOSSA-centric copy framing (broadened to "the dashboards behind your login")
 
+## Supply-chain hardening (`.npmrc`)
+
+The repo's `.npmrc` enforces strict pnpm defaults — be aware before adding deps:
+
+- `ignore-scripts=true` — install scripts (`postinstall`, `preinstall`, etc.) are **blocked by default**. To allow a specific package, add it to `allowBuilds:` in `pnpm-workspace.yaml`. Currently allowed: `esbuild`, `sharp`, `spawn-sync`.
+- `minimum-release-age=1440` — packages must be ≥24h old before they install. Mitigates fast-moving supply-chain attacks; means a freshly published version can't be installed for a day.
+- `save-exact=true` — `package.json` entries are pinned exactly (no `^` or `~`).
+- `trust-policy=no-downgrade` — pnpm refuses to install older versions over newer ones.
+- `node-options="--permission"` — Node's permission model is enabled during install.
+
+When proposing a new dep:
+1. Check if it has install scripts (native bindings, `esbuild`, `sharp`, etc.). If yes, add to `allowBuilds:`.
+2. The version installed will be the latest one published ≥24h ago.
+
 ## Sandbox / agent caveats specific to this repo
 
 When operating inside Claude Code's sandbox:
 
 - **`pnpm install` is unreliable.** Cannot write `pnpm-lock.yaml`; sometimes fails copying `.gitmodules` into nested `node_modules/.pnpm/*_tmp_*/` paths. Workflow: edit `apps/*/package.json`, then ask the user to run `! pnpm install` themselves.
 - **`.env*` writes are denied** (including `.env.example`). Document env vars in `docs/deploy.md`.
-- **`.git/config` writes are denied** — `git remote add`, `git config`, and similar must be run by the user.
+- **`.git/config` writes are denied** — `git remote add`, `git config`, `git push` over SSH all fail. The user has to run those.
 - **`.git/hooks/` creation is blocked** — fresh `git init` from inside the sandbox produces a corrupt repo. The user has to handle initial `rm -rf .git && git init`.
 - **Project-local pnpm store** at `.pnpm-store/` (set in `.npmrc`) to avoid the global `~/.pnpm-store` symlink the sandbox can't create.
 
@@ -106,5 +140,6 @@ Extension has no auto-deploy — built locally with `pnpm build:ext` and shipped
 ## Things to check before doing
 
 - **Changing the GitHub Pages base path** — touches `astro.config.mjs`, `Base.astro`, `Hero.astro`, `sitemap.xml.ts`, `public/robots.txt`, `public/llms.txt`. Easy to miss one.
-- **Adding a new dependency** — sandbox quirks make `pnpm install` painful. Bundle size on the extension content script matters (currently ~58 kB; Readability + Turndown + picker + AI extract logic).
+- **Adding a new dependency** — sandbox quirks make `pnpm install` painful. If the dep has install scripts, add to `allowBuilds:` in `pnpm-workspace.yaml`. Bundle size on the extension content script matters (currently ~58 kB; Readability + Turndown + picker + AI extract logic).
 - **Adding a second brand accent color** — `docs/marketing/brand.md` explicitly forbids this. Re-read before proposing.
+- **Adding a `run:` step to the composite action** — must include `shell: bash` (composite actions require it; regular workflows don't).
