@@ -42,7 +42,14 @@ const lastUpdated = new Date().toISOString().split("T")[0];
       </li>
     </ul>
     <p class="marginalia">
-      © {year} · Built in the open · <time datetime={lastUpdated}>Last updated {lastUpdated}</time>
+      © {year} · Built by
+      <a
+        href="https://github.com/jmanuelrosa"
+        class="no-underline hover:underline"
+        data-umami-event="github_click"
+        data-umami-event-location="footer-credit"
+      >@jmanuelrosa</a>
+      · <time datetime={lastUpdated}>Last updated {lastUpdated}</time>
     </p>
   </div>
 </footer>
