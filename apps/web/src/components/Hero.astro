@@ -1,0 +1,76 @@
+---
+const githubUrl = "https://github.com/jmanuelrosa/trakdown";
+---
+
+<header class="px-6 pt-10 sm:pt-14">
+  <div class="wide-column flex items-center justify-between">
+    <a href={import.meta.env.BASE_URL.endsWith("/") ? import.meta.env.BASE_URL : `${import.meta.env.BASE_URL}/`} class="wordmark" aria-label="trakdown home">trakdown</a>
+    <nav class="flex items-center gap-6">
+      <a
+        href="#how"
+        class="small no-underline hover:text-(--color-fg)"
+        data-umami-event="nav_click"
+        data-umami-event-target="how"
+      >How it works</a>
+      <a
+        href="#faq"
+        class="small no-underline hover:text-(--color-fg)"
+        data-umami-event="nav_click"
+        data-umami-event-target="faq"
+      >FAQ</a>
+      <a
+        href={githubUrl}
+        class="small no-underline hover:text-(--color-fg)"
+        data-umami-event="github_click"
+        data-umami-event-location="nav"
+      >GitHub</a>
+    </nav>
+  </div>
+</header>
+
+<section class="px-6 pt-16 pb-20 sm:pt-24 sm:pb-28" data-section="hero">
+  <div class="prose-column">
+    <p class="reveal small" style="animation-delay:50ms">
+      A Chrome extension · v0.0.1
+    </p>
+
+    <h1 class="reveal display-xl mt-6" style="animation-delay:140ms">
+      Capture any page as <span class="hl">markdown</span><br />
+      <span class="wedge">— even the ones behind your login.</span>
+    </h1>
+
+    <p class="reveal lede mt-8" style="animation-delay:260ms">
+      Pick any element, select any text, or grab the whole page. Output is clean markdown — tables intact, code blocks fenced, source URL preserved — ready to paste into Claude, ChatGPT, or whatever you're using.
+    </p>
+
+    <div class="reveal mt-10 flex flex-wrap gap-3" style="animation-delay:380ms">
+      <a
+        href="#install"
+        class="btn btn-primary"
+        data-umami-event="install_click"
+        data-umami-event-location="hero"
+      >Install for Chrome — Free</a>
+      <a
+        href="#demo"
+        class="btn btn-ghost"
+        data-umami-event="demo_click"
+      >See it in action →</a>
+    </div>
+
+    <p class="reveal small mt-6" style="animation-delay:480ms">
+      Built in the open · MIT licensed · No accounts, no telemetry.
+    </p>
+  </div>
+</section>
+
+<style>
+  .reveal {
+    animation: var(--animate-rise);
+  }
+
+  .wedge {
+    font-weight: 400;
+    color: var(--color-fg-muted);
+    font-style: italic;
+  }
+</style>

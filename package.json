@@ -1,0 +1,27 @@
+{
+  "name": "trakdown",
+  "private": true,
+  "version": "0.0.0",
+  "description": "Capture web pages and DOM regions as markdown for AI consumption",
+  "type": "module",
+  "scripts": {
+    "dev:ext": "pnpm -F @trakdown/extension dev",
+    "dev:web": "pnpm -F @trakdown/web dev",
+    "lint": "biome check",
+    "lint:fix": "biome check --write",
+    "lint:ci": "biome ci",
+    "format": "biome format --write",
+    "build": "pnpm -r build",
+    "build:ext": "pnpm -F @trakdown/extension build",
+    "build:web": "pnpm -F @trakdown/web build"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "^2.0.0",
+    "typescript": "^5.6.0"
+  },
+  "engines": {
+    "node": ">=22",
+    "pnpm": ">=11"
+  },
+  "packageManager": "pnpm@11.1.2"
+}
