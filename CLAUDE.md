@@ -69,7 +69,7 @@ When adding new asset references (favicon, og-image, sitemap, internal links), u
 1. `import.meta.env.PROD === true` (script not injected during `astro dev`)
 2. `data-domains={site.hostname}` on the script tag (Umami's own tracker filters by hostname)
 
-`PUBLIC_UMAMI_ID` is read as a repo *variable* (not secret — it's exposed in the client bundle on purpose). Click events use Umami's `data-umami-event` attribute auto-discovery; scroll-depth and section-view events live in `apps/web/src/components/Analytics.astro`. Each major `<section>` carries a `data-section` attribute that the IntersectionObserver reads.
+`UMAMI_WEBSITE_ID` is a repo *Variable* (not Secret — the website ID is rendered into the page HTML, not a credential). Read in `Base.astro` frontmatter via `import.meta.env.UMAMI_WEBSITE_ID` — that runs server-side during build, so no `PUBLIC_` prefix is needed (the value lands in static HTML, not the client JS bundle). Click events use Umami's `data-umami-event` attribute auto-discovery; scroll-depth and section-view events live in `apps/web/src/components/Analytics.astro`. Each major `<section>` carries a `data-section` attribute that the IntersectionObserver reads.
 
 ## Brand — locked, do not regress
 
@@ -99,7 +99,7 @@ When operating inside Claude Code's sandbox:
 
 ## Deploy
 
-`.github/workflows/deploy-web.yml` deploys `apps/web` to GitHub Pages on push to `main`. Requires repo *Variables* → `PUBLIC_UMAMI_ID` (only if analytics is wanted) and Settings → Pages → Source set to "GitHub Actions". Walkthrough in `docs/deploy.md`.
+`.github/workflows/deploy-web.yml` deploys `apps/web` to GitHub Pages on push to `main`. Requires repo *Variables* → `UMAMI_WEBSITE_ID` (only if analytics is wanted) and Settings → Pages → Source set to "GitHub Actions". Walkthrough in `docs/deploy.md`.
 
 Extension has no auto-deploy — built locally with `pnpm build:ext` and shipped via GitHub release / Chrome Web Store.
 

@@ -45,7 +45,7 @@ jobs:
 
       - name: Build apps/web
         env:
-          PUBLIC_UMAMI_ID: ${{ vars.PUBLIC_UMAMI_ID }}
+          UMAMI_WEBSITE_ID: ${{ vars.UMAMI_WEBSITE_ID }}
         run: pnpm -F @trakdown/web build
 
       - uses: actions/configure-pages@v5

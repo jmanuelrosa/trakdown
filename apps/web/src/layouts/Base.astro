@@ -24,7 +24,7 @@ const ogImageUrl = new URL(`${base}${ogImage.replace(/^\//, "")}`, site).toStrin
 // Umami analytics (Cloud) — only injected on production builds AND only when the
 // site is served from the canonical domain (data-domains filter). Dev / preview
 // against localhost stays untracked even if the script accidentally loads.
-const umamiId = import.meta.env.PUBLIC_UMAMI_ID;
+const umamiId = import.meta.env.UMAMI_WEBSITE_ID;
 const umamiEnabled = import.meta.env.PROD && Boolean(umamiId);
 const umamiDomains = site.hostname;
 

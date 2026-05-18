@@ -6,21 +6,23 @@ The landing page reads one analytics variable. Set it on production deploys; lea
 
 | Name | Example | Required |
 |---|---|---|
-| `PUBLIC_UMAMI_ID` | `00000000-0000-0000-0000-000000000000` | for analytics |
+| `UMAMI_WEBSITE_ID` | `00000000-0000-0000-0000-000000000000` | for analytics |
 
-**Where to set it**: GitHub → repo → *Settings → Secrets and variables → Actions → Variables → New repository variable*. Use a **Variable** (not a Secret) — the value is exposed in the client bundle on purpose; secrets would just leak through the build anyway. Must be prefixed with `PUBLIC_` because Astro/Vite only expose `PUBLIC_*` vars to the client.
+**Where to set it**: GitHub → repo → *Settings → Secrets and variables → Actions → Variables → New repository variable*. Use a **Variable** (not a Secret) — the website ID is rendered into the page HTML, not a credential.
+
+The value is read in `Base.astro` frontmatter (server-side, at build time) via `import.meta.env.UMAMI_WEBSITE_ID` and rendered into the conditional `<script>` tag. Because the read happens server-side, **no `PUBLIC_` prefix is needed** — the ID ships in the static HTML output, not via the client JS bundle.
 
 **The Umami snippet is only injected when**:
 
 1. The build is a production build (`import.meta.env.PROD === true`) — `astro dev` skips it entirely
-2. `PUBLIC_UMAMI_ID` is set
+2. `UMAMI_WEBSITE_ID` is set
 
 Even when both are true, Umami's tracker is scoped to the canonical domain via the `data-domains` attribute (derived from `astro.config.mjs` → `site` + `base`). Running `astro preview` locally on `localhost` will not send events.
 
 For local development, create `apps/web/.env` (gitignored) with:
 
 ```env
-PUBLIC_UMAMI_ID=00000000-0000-0000-0000-000000000000
+UMAMI_WEBSITE_ID=00000000-0000-0000-0000-000000000000
 ```
 
 The Umami script still won't fire locally because of the production gate — the `.env` file is only useful if you specifically want to test the prod-build path via `pnpm -F @trakdown/web preview`.
@@ -38,9 +40,9 @@ The Umami script still won't fire locally because of the production gate — the
    - Under *Build and deployment → Source*, choose **GitHub Actions**
    - Don't choose "Deploy from a branch" — we deploy artifacts directly via the Actions workflow.
 
-2. **Add `PUBLIC_UMAMI_ID` repository variable** (only if you want analytics).
+2. **Add `UMAMI_WEBSITE_ID` repository variable** (only if you want analytics).
    - GitHub repo → *Settings → Secrets and variables → Actions → Variables tab → New repository variable*
-   - Name: `PUBLIC_UMAMI_ID`
+   - Name: `UMAMI_WEBSITE_ID`
    - Value: your Umami Cloud website UUID
 
 3. **Push to `main`.** The action builds `apps/web` and publishes to GitHub Pages within a couple of minutes.
@@ -73,7 +75,7 @@ Two jobs, with different scopes per trigger:
 Behavior:
 
 - **Path-filtered** to `apps/web/**`, lockfile, root `package.json`, and the workflow file itself — unrelated changes don't trigger builds.
-- **Build job** installs deps with frozen lockfile, builds `@trakdown/web` (passing `PUBLIC_UMAMI_ID` from repo variables), and uploads `apps/web/dist` as a Pages artifact. Runs on PRs to catch broken builds before merge.
+- **Build job** installs deps with frozen lockfile, builds `@trakdown/web` (passing `UMAMI_WEBSITE_ID` from repo variables), and uploads `apps/web/dist` as a Pages artifact. Runs on PRs to catch broken builds before merge.
 - **Deploy job** publishes the artifact via `actions/deploy-pages`. Gated to `push` and `workflow_dispatch` events only — PRs never publish. Uses a `concurrency: pages` group so GitHub Pages serial-deploy requirement is respected without blocking PR builds.
 
 PR previews (per-PR live URLs) are **not** included — GitHub Pages doesn't expose them natively. If we want them later we can add a parallel workflow that publishes per-PR builds elsewhere (e.g. Cloudflare Pages preview).

@@ -1,6 +1,6 @@
 # Analytics
 
-The landing page uses **Umami Cloud** for privacy-friendly analytics. Setup is env-driven (one variable: `PUBLIC_UMAMI_ID`) — see [`docs/deploy.md`](./deploy.md).
+The landing page uses **Umami Cloud** for privacy-friendly analytics. Setup is env-driven (one variable: `UMAMI_WEBSITE_ID`) — see [`docs/deploy.md`](./deploy.md).
 
 **Local / preview traffic is excluded by two layers:**
 
