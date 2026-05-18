@@ -74,13 +74,72 @@
     window.addEventListener("scroll", scheduled, { passive: true });
   }
 
+  // Active engagement time — only ticks while the tab is visible AND the user
+  // has interacted in the last 30s. Filters out tabs left open in the background.
+  function initEngagedTime() {
+    let engaged = 0;
+    let lastActivity = Date.now();
+    const seen = new Set<number>();
+    const thresholds = [60, 180] as const;
+    const IDLE_MS = 30_000;
+
+    const bump = () => {
+      lastActivity = Date.now();
+    };
+    ["scroll", "mousemove", "keydown", "click"].forEach((ev) =>
+      window.addEventListener(ev, bump, { passive: true }),
+    );
+
+    const interval = window.setInterval(() => {
+      if (document.visibilityState !== "visible") return;
+      if (Date.now() - lastActivity > IDLE_MS) return;
+      engaged += 1;
+      for (const t of thresholds) {
+        if (engaged >= t && !seen.has(t)) {
+          seen.add(t);
+          track("engaged_time", { seconds: t });
+        }
+      }
+      if (seen.size === thresholds.length) {
+        window.clearInterval(interval);
+      }
+    }, 1000);
+  }
+
+  // Per-FAQ-question visibility — which objections do visitors actually read?
+  function initFaqViews() {
+    const items = document.querySelectorAll<HTMLElement>("[data-question]");
+    if (!items.length || !("IntersectionObserver" in window)) return;
+
+    const seen = new Set<string>();
+    const io = new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries) {
+          if (!entry.isIntersecting) continue;
+          const q = entry.target.getAttribute("data-question");
+          if (!q || seen.has(q)) continue;
+          seen.add(q);
+          track("faq_view", { question: q });
+          io.unobserve(entry.target);
+        }
+      },
+      { threshold: 0.6 },
+    );
+
+    items.forEach((el) => io.observe(el));
+  }
+
   if (document.readyState === "loading") {
     document.addEventListener("DOMContentLoaded", () => {
       initSectionViews();
       initScrollDepth();
+      initEngagedTime();
+      initFaqViews();
     });
   } else {
     initSectionViews();
     initScrollDepth();
+    initEngagedTime();
+    initFaqViews();
   }
 </script>
