@@ -1,0 +1,71 @@
+name: Pull Request Verification
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+env:
+  CI: true
+  HUSKY: 0
+
+permissions:
+  contents: read
+  pull-requests: read
+  checks: write
+
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+
+  secret-scan:
+    name: Secret Detection (GitLeaks)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Run GitLeaks secret scanner
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITLEAKS_LICENSE: ${{ secrets.GITLEAKS_LICENSE }}
+
+  security-scan:
+    name: Security Vulnerability Scan (Bearer)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Bearer Security Scan - Critical & High Severity
+        uses: bearer/bearer-action@v2
+        with:
+          severity: "critical,high"
+
+      - name: Bearer Security Scan - Medium, Low & Warning Severity
+        uses: bearer/bearer-action@v2
+        with:
+          severity: "medium,low,warning"
+          exit-code: 0 # Don't fail the pipeline for these severities
+
+  lint-verification:
+    name: Code Linting
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - id: setup
+        uses: ./.github/actions/setup-node
+
+      - name: Run Linter and format check
+        run: pnpm lint:ci
