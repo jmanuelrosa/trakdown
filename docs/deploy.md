@@ -62,13 +62,21 @@ To serve from `trakdown.app` (or any apex / subdomain you own):
 
 ### What the workflow does
 
-- Triggers on `push` to `main` or manual dispatch.
-- Path-filtered: only runs when `apps/web/**`, the lockfile, or the workflow itself changes.
-- Installs deps with frozen lockfile (a missing/stale `pnpm-lock.yaml` fails fast).
-- Builds only `@trakdown/web`, passing `PUBLIC_UMAMI_ID` from repo variables.
-- Uploads the `apps/web/dist` artifact and deploys via `actions/deploy-pages`.
+Two jobs, with different scopes per trigger:
 
-PR previews are **not** included in this workflow. GitHub Pages doesn't expose preview deploys natively. If we want them later we can add a parallel workflow that publishes per-PR builds to a separate location (e.g. Cloudflare Pages preview, or a `gh-pages-preview` branch with PR subdirectories).
+| Trigger | `build` job | `deploy` job |
+|---|---|---|
+| `push` to `main` | runs | runs |
+| `pull_request` to `main` | runs (validation only) | skipped |
+| `workflow_dispatch` | runs | runs |
+
+Behavior:
+
+- **Path-filtered** to `apps/web/**`, lockfile, root `package.json`, and the workflow file itself — unrelated changes don't trigger builds.
+- **Build job** installs deps with frozen lockfile, builds `@trakdown/web` (passing `PUBLIC_UMAMI_ID` from repo variables), and uploads `apps/web/dist` as a Pages artifact. Runs on PRs to catch broken builds before merge.
+- **Deploy job** publishes the artifact via `actions/deploy-pages`. Gated to `push` and `workflow_dispatch` events only — PRs never publish. Uses a `concurrency: pages` group so GitHub Pages serial-deploy requirement is respected without blocking PR builds.
+
+PR previews (per-PR live URLs) are **not** included — GitHub Pages doesn't expose them natively. If we want them later we can add a parallel workflow that publishes per-PR builds elsewhere (e.g. Cloudflare Pages preview).
 
 ### Troubleshooting
 

@@ -1,7 +1,17 @@
 name: Deploy web
 
+# Pull requests targeting main run the build only (quality gate — catches
+# broken builds before merge). Push to main runs build + deploy. Manual
+# dispatch from the Actions tab also deploys.
 on:
   push:
+    branches: [main]
+    paths:
+      - "apps/web/**"
+      - "pnpm-lock.yaml"
+      - "package.json"
+      - ".github/workflows/deploy-web.yml"
+  pull_request:
     branches: [main]
     paths:
       - "apps/web/**"
@@ -14,10 +24,6 @@ permissions:
   contents: read
   pages: write
   id-token: write
-
-concurrency:
-  group: pages
-  cancel-in-progress: false
 
 jobs:
   build:
@@ -49,8 +55,16 @@ jobs:
           path: apps/web/dist
 
   deploy:
+    # Only deploy on push to main or manual dispatch — PR builds validate
+    # without publishing.
+    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
     needs: build
     runs-on: ubuntu-latest
+    # GitHub Pages requires serial deployments. Scoped to the deploy job so
+    # PR builds run freely without queuing behind in-flight deploys.
+    concurrency:
+      group: pages
+      cancel-in-progress: false
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
