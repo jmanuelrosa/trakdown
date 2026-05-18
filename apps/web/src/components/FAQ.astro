@@ -26,6 +26,15 @@ const items = [
   },
 ];
 
+// Slugify the question text for use as the `data-question` analytics value.
+// Lowercase, hyphenated, ASCII-only, capped at 40 chars.
+const slugify = (s: string) =>
+  s
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-|-$/g, "")
+    .slice(0, 40);
+
 // FAQPage JSON-LD — LLMs cite structured Q&A blocks at higher rates than prose.
 const faqSchema = {
   "@context": "https://schema.org",
@@ -48,7 +57,7 @@ const faqSchema = {
 
     <dl class="mt-12 space-y-10">
       {items.map((item) => (
-        <div>
+        <div data-question={slugify(item.q)}>
           <dt class="display-md text-(--color-fg) leading-snug">{item.q}</dt>
           <dd class="body-text mt-3">{item.a}</dd>
         </div>
