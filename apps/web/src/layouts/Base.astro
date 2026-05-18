@@ -25,7 +25,6 @@ const ogImageUrl = new URL(`${base}${ogImage.replace(/^\//, "")}`, site).toStrin
 // site is served from the canonical domain (data-domains filter). Dev / preview
 // against localhost stays untracked even if the script accidentally loads.
 const umamiId = import.meta.env.UMAMI_WEBSITE_ID;
-const umamiEnabled = import.meta.env.PROD && Boolean(umamiId);
 const umamiDomains = site.hostname;
 
 // Schema.org SoftwareApplication — primary structured data for the product.
@@ -119,7 +118,7 @@ const websiteSchema = {
       set:html={JSON.stringify(websiteSchema)}
     />
 
-    {umamiEnabled && (
+    {umamiId && (
       <script
         defer
         src="https://cloud.umami.is/script.js"
