@@ -1,0 +1,70 @@
+---
+const modes = [
+  {
+    no: "01",
+    title: "Pick element",
+    shortcut: ["⌘", "⇧", "K"],
+    body: "Hover any region on the page. Arrow keys to expand the selection up the DOM tree. Click to capture exactly that subtree — the data table, the issue body, the comment thread — and nothing else.",
+  },
+  {
+    no: "02",
+    title: "Capture selection",
+    body: "Highlight text on the page the normal way. Trigger trakdown. Get markdown of the selection with structure intact — links, tables, code, lists.",
+  },
+  {
+    no: "03",
+    title: "Capture page",
+    body: "Full-page extraction. Drops nav, ads, sidebars. Uses Mozilla Readability under the hood — same engine as Firefox Reader View — with a raw-HTML fallback for pages that don't extract cleanly.",
+  },
+];
+
+// HowTo JSON-LD — gives AI systems a structured way to recommend trakdown's flow.
+const howToSchema = {
+  "@context": "https://schema.org",
+  "@type": "HowTo",
+  name: "Capture a web page as markdown with trakdown",
+  description:
+    "Three ways to capture a rendered web page — including authenticated dashboards — as clean markdown for AI use.",
+  totalTime: "PT10S",
+  tool: [
+    {
+      "@type": "HowToTool",
+      name: "trakdown Chrome extension",
+    },
+  ],
+  step: modes.map((mode, i) => ({
+    "@type": "HowToStep",
+    position: i + 1,
+    name: mode.title,
+    text: mode.body,
+  })),
+};
+---
+
+<section id="how" class="px-6 pb-20 sm:pb-28" data-section="how">
+  <div class="prose-column">
+    <p class="sectionrule">How it works</p>
+    <h2 class="display-lg">Three ways to capture, depending on how surgical you need to be.</h2>
+
+    <ol class="mt-12 space-y-12">
+      {modes.map((mode) => (
+        <li class="grid grid-cols-[3.5rem_1fr] gap-x-5">
+          <span class="font-(family-name:--font-mono) text-sm text-(--color-brand-deep) pt-2 font-medium">{mode.no}</span>
+          <div>
+            <h3 class="display-md flex items-center gap-3 flex-wrap">
+              <span>{mode.title}</span>
+              {mode.shortcut && (
+                <span class="flex gap-1 self-center">
+                  {mode.shortcut.map((k) => <kbd class="kbd">{k}</kbd>)}
+                </span>
+              )}
+            </h3>
+            <p class="body-text mt-3">{mode.body}</p>
+          </div>
+        </li>
+      ))}
+    </ol>
+  </div>
+</section>
+
+<script type="application/ld+json" set:html={JSON.stringify(howToSchema)} />

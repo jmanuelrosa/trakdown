@@ -1,0 +1,60 @@
+---
+const items = [
+  {
+    q: "Why a Chrome extension and not a CLI?",
+    a: "Authenticated pages need to run as you, in your browser, with your session. A CLI can't reach pages behind a login without cracking the auth flow — that's brittle and out of scope. A CLI for public pages is on the roadmap.",
+  },
+  {
+    q: "Is my page data sent anywhere?",
+    a: "No. Everything runs locally in your tab. The extension has zero network permissions beyond what Chrome itself uses.",
+  },
+  {
+    q: "How does this differ from Reader Mode?",
+    a: "Reader Mode optimizes for articles. trakdown handles dashboards — tables, threaded comments, data-dense pages where Reader Mode either gives up or strips the data you actually need.",
+  },
+  {
+    q: "Will there be a Firefox or Safari version?",
+    a: "Eventually. Chrome first because that's where the target users are and where on-device AI APIs — a future feature — live. Cross-browser is a fast-follow if demand is there.",
+  },
+  {
+    q: "Where's the Chrome Web Store listing?",
+    a: "In review. For now, install unpacked from the GitHub release — instructions live in the README.",
+  },
+  {
+    q: "What's the license?",
+    a: "MIT. Use it however you want.",
+  },
+];
+
+// FAQPage JSON-LD — LLMs cite structured Q&A blocks at higher rates than prose.
+const faqSchema = {
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  mainEntity: items.map((item) => ({
+    "@type": "Question",
+    name: item.q,
+    acceptedAnswer: {
+      "@type": "Answer",
+      text: item.a,
+    },
+  })),
+};
+---
+
+<section id="faq" class="px-6 pb-20 sm:pb-28" data-section="faq">
+  <div class="prose-column">
+    <p class="sectionrule">FAQ</p>
+    <h2 class="display-lg">Questions you probably have.</h2>
+
+    <dl class="mt-12 space-y-10">
+      {items.map((item) => (
+        <div>
+          <dt class="display-md text-(--color-fg) leading-snug">{item.q}</dt>
+          <dd class="body-text mt-3">{item.a}</dd>
+        </div>
+      ))}
+    </dl>
+  </div>
+</section>
+
+<script type="application/ld+json" set:html={JSON.stringify(faqSchema)} />

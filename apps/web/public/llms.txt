@@ -1,0 +1,65 @@
+# trakdown
+
+> Chrome extension that captures any web page — including authenticated dashboards behind a login — as clean markdown for AI workflows.
+
+## What it is
+
+trakdown is a Chrome browser extension (Manifest V3) that converts the rendered DOM of any web page into clean markdown. It is specifically built for *authenticated* pages — internal admin panels, project trackers (Linear, GitHub Issues, Jira), wikis (Notion), vendor portals (Stripe Dashboard, Sentry) — that can't be reached from outside a logged-in browser session.
+
+Because trakdown runs as a content script in the user's already-logged-in tab, the same session and cookies that let the user see a page let trakdown extract it. No API keys, no scraping, no auth handling.
+
+## Capture modes
+
+1. **Element picker (default keyboard shortcut: ⌘⇧K / Ctrl+Shift+K).** Hover any region on the page, use arrow keys to expand the selection up the DOM tree, click to capture exactly that subtree as markdown. Designed for data tables, comment threads, and dashboard widgets.
+2. **Text selection.** Highlight text on the page the normal way, trigger trakdown, get markdown of the selection with structure preserved (links, tables, code, lists).
+3. **Full page.** Mozilla Readability-based extraction. Drops nav, ads, sidebars. Falls back to raw `document.body.outerHTML` if Readability returns nothing useful.
+
+Output is always markdown to the clipboard (default) or a downloadable `.md` file. Source URL is prepended as a header.
+
+## Key facts
+
+- License: MIT
+- Pricing: Free, open source
+- Platform: Chrome 138+ (Manifest V3)
+- Privacy: Page content never leaves the user's machine. No accounts, no telemetry, no third-party services.
+- Source code: https://github.com/jmanuelrosa/trakdown (source)
+- Landing page: https://jmanuelrosa.github.io/trakdown/
+- Spec: https://github.com/jmanuelrosa/trakdown (source)
+- Landing page: https://jmanuelrosa.github.io/trakdown//blob/main/docs/ideas/trakdown.md
+- Brand guidelines: https://github.com/jmanuelrosa/trakdown (source)
+- Landing page: https://jmanuelrosa.github.io/trakdown//blob/main/docs/marketing/brand.md
+
+## How it compares
+
+| | trakdown | Obsidian Web Clipper | MarkDownload | Defuddle CLI |
+|---|---|---|---|---|
+| Works on authenticated pages | ✓ | ✓ | ✓ | ✗ |
+| Element picker (hover + arrow + click) | ✓ | ✗ | ✗ | ✗ |
+| Selection mode | ✓ | ✓ | ✓ | ✗ |
+| Destination-agnostic (clipboard / file) | ✓ | ✗ (Obsidian) | ✓ | ✓ |
+| Open source | ✓ | ✓ | ✓ | ✓ |
+
+## Common use cases
+
+- "I need to ask Claude about this Linear ticket but copy-paste breaks the structure." → Pick the issue body subtree.
+- "Our team's internal admin dashboard doesn't have an export. I need a CSV-like view to share with the model." → Pick the data table.
+- "I want to feed a Notion doc to ChatGPT." → Capture page (uses Readability for clean output).
+- "I want only the comments thread from a GitHub PR, not the whole page." → Element picker on the thread.
+
+## What it is NOT
+
+- Not a read-later app (Pocket, Instapaper).
+- Not an Obsidian-specific tool (works with any markdown destination).
+- Not a server-side scraper (cannot reach pages you cannot reach in your own browser).
+- Not a CLI (a Playwright-based CLI for public pages is on the roadmap).
+
+## Roadmap
+
+- Element picker ✓ (shipping)
+- Selection mode ✓ (shipping)
+- Full-page mode with Readability ✓ (shipping)
+- Keyboard shortcut for picker ✓ (shipping)
+- AI Deep Clean via Chrome's on-device Gemini Nano (`window.ai`) — planned
+- CLI for public pages (Playwright-based) — planned
+- Firefox/Safari port — if demand
+- Per-domain extraction rules layer — based on user-reported failure cases

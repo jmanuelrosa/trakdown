@@ -1,0 +1,26 @@
+---
+const sites = ["Linear", "GitHub Issues", "Jira", "Notion", "Stripe Dashboard", "Sentry", "your internal admin panel"];
+---
+
+<section class="px-6 pb-20 sm:pb-28" data-section="proof">
+  <div class="prose-column">
+    <p class="sectionrule">What it is</p>
+
+    <p class="body-text">
+      <strong>trakdown is a Chrome extension</strong> that captures any web page — including authenticated dashboards behind a login — as clean markdown. It runs in your already-logged-in tab, so the same session and cookies that let <em>you</em> see a page let trakdown extract it. No API keys, no scraping.
+    </p>
+
+    <p class="body-text mt-4">
+      Built for the dashboards you work in every day:
+    </p>
+
+    <p class="marginalia mt-4">
+      {sites.map((site, i) => (
+        <>
+          <span class="text-(--color-fg-muted)">{site}</span>
+          {i < sites.length - 1 && <span class="text-(--color-brand-deep) mx-2">·</span>}
+        </>
+      ))}
+    </p>
+  </div>
+</section>

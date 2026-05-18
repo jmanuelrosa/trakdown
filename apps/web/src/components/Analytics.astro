@@ -1,0 +1,86 @@
+---
+// Scroll-depth + section-view tracking, fired through Umami when available.
+// Click events are handled by Umami's auto-discovery of `data-umami-event` attributes,
+// so this component only handles things that can't be done with HTML attributes alone.
+---
+
+<script>
+  type UmamiTracker = {
+    track: (event: string, properties?: Record<string, unknown>) => void;
+  };
+
+  declare global {
+    interface Window {
+      umami?: UmamiTracker;
+    }
+  }
+
+  function track(event: string, props?: Record<string, unknown>) {
+    // Optional chaining: if Umami isn't loaded (no env vars in this build), do nothing.
+    window.umami?.track(event, props);
+  }
+
+  function initSectionViews() {
+    const sections = document.querySelectorAll<HTMLElement>("[data-section]");
+    if (!sections.length || !("IntersectionObserver" in window)) return;
+
+    const seen = new Set<string>();
+    const io = new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries) {
+          if (!entry.isIntersecting) continue;
+          const name = entry.target.getAttribute("data-section");
+          if (!name || seen.has(name)) continue;
+          seen.add(name);
+          track("section_view", { section: name });
+          io.unobserve(entry.target);
+        }
+      },
+      { threshold: 0.4, rootMargin: "0px 0px -10% 0px" },
+    );
+
+    sections.forEach((s) => io.observe(s));
+  }
+
+  function initScrollDepth() {
+    const thresholds = [25, 50, 75, 100] as const;
+    const seen = new Set<number>();
+    let ticking = false;
+
+    function onScroll() {
+      const max = document.documentElement.scrollHeight - window.innerHeight;
+      if (max <= 0) return;
+      const pct = Math.round((window.scrollY / max) * 100);
+      for (const t of thresholds) {
+        if (pct >= t && !seen.has(t)) {
+          seen.add(t);
+          track("scroll_depth", { depth: t });
+        }
+      }
+      if (seen.size === thresholds.length) {
+        window.removeEventListener("scroll", scheduled);
+      }
+    }
+
+    function scheduled() {
+      if (ticking) return;
+      ticking = true;
+      requestAnimationFrame(() => {
+        onScroll();
+        ticking = false;
+      });
+    }
+
+    window.addEventListener("scroll", scheduled, { passive: true });
+  }
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", () => {
+      initSectionViews();
+      initScrollDepth();
+    });
+  } else {
+    initSectionViews();
+    initScrollDepth();
+  }
+</script>

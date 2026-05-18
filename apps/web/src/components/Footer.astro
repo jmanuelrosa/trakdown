@@ -1,0 +1,48 @@
+---
+const githubUrl = "https://github.com/jmanuelrosa/trakdown";
+const year = new Date().getFullYear();
+const lastUpdated = new Date().toISOString().split("T")[0];
+---
+
+<footer class="px-6 py-10 border-t border-(--color-rule)">
+  <div class="wide-column flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+    <p class="wordmark">trakdown</p>
+    <ul class="flex flex-wrap gap-6 marginalia">
+      <li>
+        <a
+          href={githubUrl}
+          class="no-underline hover:underline"
+          data-umami-event="github_click"
+          data-umami-event-location="footer"
+        >GitHub</a>
+      </li>
+      <li>
+        <a
+          href={`${githubUrl}/issues`}
+          class="no-underline hover:underline"
+          data-umami-event="github_click"
+          data-umami-event-location="issues"
+        >Issues</a>
+      </li>
+      <li>
+        <a
+          href={`${githubUrl}#roadmap`}
+          class="no-underline hover:underline"
+          data-umami-event="github_click"
+          data-umami-event-location="roadmap"
+        >Roadmap</a>
+      </li>
+      <li>
+        <a
+          href={`${githubUrl}/blob/main/LICENSE`}
+          class="no-underline hover:underline"
+          data-umami-event="github_click"
+          data-umami-event-location="license"
+        >MIT licensed</a>
+      </li>
+    </ul>
+    <p class="marginalia">
+      © {year} · Built in the open · <time datetime={lastUpdated}>Last updated {lastUpdated}</time>
+    </p>
+  </div>
+</footer>
