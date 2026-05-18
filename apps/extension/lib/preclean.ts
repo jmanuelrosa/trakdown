@@ -36,34 +36,44 @@ export function precleanHtmlForAi(doc: Document): string {
 
   // Drop entire tag types (scripts, styles, embeds, decorative SVGs, etc.)
   for (const tag of REMOVE_TAGS) {
-    cloned.querySelectorAll(tag).forEach((el) => el.remove());
+    for (const el of cloned.querySelectorAll(tag)) {
+      el.remove();
+    }
   }
 
   // Remove HTML comments
-  const walker = cloned.createTreeWalker(root, NodeFilter.SHOW_COMMENT);
+  const commentWalker = cloned.createTreeWalker(root, NodeFilter.SHOW_COMMENT);
   const comments: Node[] = [];
-  let node: Node | null;
-  while ((node = walker.nextNode())) comments.push(node);
+  let comment = commentWalker.nextNode();
+  while (comment !== null) {
+    comments.push(comment);
+    comment = commentWalker.nextNode();
+  }
   for (const c of comments) c.parentNode?.removeChild(c);
 
   // Remove hidden / decorative elements
-  root.querySelectorAll('[hidden], [aria-hidden="true"]').forEach((el) => el.remove());
+  for (const el of root.querySelectorAll('[hidden], [aria-hidden="true"]')) {
+    el.remove();
+  }
 
   // Strip noisy attributes everywhere
-  root.querySelectorAll("*").forEach((el) => {
+  for (const el of root.querySelectorAll("*")) {
     for (const attr of REMOVE_ATTRS) {
       el.removeAttribute(attr);
     }
     // Drop any data-* attribute that survived
     const dataAttrs = Array.from(el.attributes).filter((a) => a.name.startsWith("data-"));
     for (const a of dataAttrs) el.removeAttribute(a.name);
-  });
+  }
 
   // Collapse runs of whitespace to single spaces in text nodes (keep newlines)
   const textWalker = cloned.createTreeWalker(root, NodeFilter.SHOW_TEXT);
   const textNodes: Text[] = [];
-  let t: Node | null;
-  while ((t = textWalker.nextNode())) textNodes.push(t as Text);
+  let textNode = textWalker.nextNode();
+  while (textNode !== null) {
+    textNodes.push(textNode as Text);
+    textNode = textWalker.nextNode();
+  }
   for (const text of textNodes) {
     if (text.nodeValue) {
       text.nodeValue = text.nodeValue.replace(/[ \t\f\v]+/g, " ");

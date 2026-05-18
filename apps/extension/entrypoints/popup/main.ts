@@ -1,14 +1,8 @@
-import { aiAvailability, type AiAvailability } from "@/lib/ai-extract";
-import type {
-  CaptureMode,
-  CaptureRequest,
-  CaptureResponse,
-} from "@/lib/messaging";
+import { type AiAvailability, aiAvailability } from "@/lib/ai-extract";
+import type { CaptureMode, CaptureRequest, CaptureResponse } from "@/lib/messaging";
 
 const statusEl = document.getElementById("status") as HTMLParagraphElement;
-const aiButton = document.querySelector<HTMLButtonElement>(
-  'button[data-mode="page-ai"]',
-);
+const aiButton = document.querySelector<HTMLButtonElement>('button[data-mode="page-ai"]');
 
 document.querySelectorAll<HTMLButtonElement>("button[data-mode]").forEach((btn) => {
   btn.addEventListener("click", () => {
@@ -97,14 +91,10 @@ async function runCapture(mode: CaptureMode): Promise<void> {
   try {
     await navigator.clipboard.writeText(res.markdown);
     const sourceTag = res.source ? ` (${res.source})` : "";
-    setStatus(
-      `Copied ${res.markdown.length.toLocaleString()} chars${sourceTag}.`,
-    );
+    setStatus(`Copied ${res.markdown.length.toLocaleString()} chars${sourceTag}.`);
   } catch (err) {
     setStatus(
-      `Captured but couldn't write clipboard: ${
-        err instanceof Error ? err.message : String(err)
-      }`,
+      `Captured but couldn't write clipboard: ${err instanceof Error ? err.message : String(err)}`,
     );
   }
 }

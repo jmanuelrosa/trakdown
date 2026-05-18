@@ -1,3 +1,12 @@
 packages:
   - "apps/*"
   - "packages/*"
+# Explicit opt-in for packages with install scripts (pnpm 11+ requires this).
+# All three ship native binaries / generated artifacts we actually need:
+#   - esbuild: Vite's bundler binary
+#   - sharp:   Astro's libvips bindings for image optimization
+#   - spawn-sync: child_process polyfill used during install
+allowBuilds:
+  esbuild: true
+  sharp: true
+  spawn-sync: true

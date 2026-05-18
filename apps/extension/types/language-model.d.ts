@@ -2,11 +2,7 @@
 // Available on Chrome 138+ when on-device AI is enabled.
 // API: https://developer.chrome.com/docs/ai/prompt-api
 
-type LanguageModelAvailability =
-  | "available"
-  | "downloadable"
-  | "downloading"
-  | "unavailable";
+type LanguageModelAvailability = "available" | "downloadable" | "downloading" | "unavailable";
 
 interface LanguageModelInitialPrompt {
   role: "system" | "user" | "assistant";

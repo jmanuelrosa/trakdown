@@ -2,12 +2,7 @@ import { Readability } from "@mozilla/readability";
 import { aiExtract } from "./ai-extract";
 import { precleanHtmlForAi } from "./preclean";
 
-export type ExtractSource =
-  | "readability"
-  | "fallback"
-  | "selection"
-  | "picker"
-  | "ai-clean";
+export type ExtractSource = "readability" | "fallback" | "selection" | "picker" | "ai-clean";
 
 export interface ExtractResult {
   html: string;

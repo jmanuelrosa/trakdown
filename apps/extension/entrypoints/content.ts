@@ -1,4 +1,4 @@
-import { extractMain, extractMainWithAi, type ExtractResult } from "@/lib/extract";
+import { type ExtractResult, extractMain, extractMainWithAi } from "@/lib/extract";
 import { htmlToMarkdown } from "@/lib/markdown";
 import type { CaptureRequest, CaptureResponse } from "@/lib/messaging";
 import { activatePicker, isPickerActive, showToast } from "@/lib/picker";
@@ -85,10 +85,9 @@ async function runPicker(): Promise<void> {
     showToast(`Copied ${markdown.length.toLocaleString()} chars`);
   } catch (err) {
     console.warn("[trakdown] picker capture failed:", err);
-    showToast(
-      `Capture failed: ${err instanceof Error ? err.message : String(err)}`,
-      { variant: "error" },
-    );
+    showToast(`Capture failed: ${err instanceof Error ? err.message : String(err)}`, {
+      variant: "error",
+    });
   }
 }
 
@@ -104,10 +103,9 @@ async function runAiCapture(): Promise<void> {
     showToast(`Copied ${markdown.length.toLocaleString()} chars (${tag})`);
   } catch (err) {
     console.warn("[trakdown] AI capture failed:", err);
-    showToast(
-      `AI capture failed: ${err instanceof Error ? err.message : String(err)}`,
-      { variant: "error" },
-    );
+    showToast(`AI capture failed: ${err instanceof Error ? err.message : String(err)}`, {
+      variant: "error",
+    });
   }
 }
 
