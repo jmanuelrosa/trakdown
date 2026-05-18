@@ -1,0 +1,52 @@
+---
+const rows = [
+  { feature: "Works on authenticated pages", values: [true, true, true, false] },
+  { feature: "Element picker (hover + arrow + click)", values: [true, false, false, false] },
+  { feature: "Selection mode", values: [true, true, true, false] },
+  { feature: "Destination-agnostic (clipboard / file)", values: [true, false, true, true] },
+  { feature: "Open source", values: [true, true, true, true] },
+];
+
+const columns = ["trakdown", "Obsidian Web Clipper", "MarkDownload", "Defuddle CLI"];
+---
+
+<section class="px-6 pb-20 sm:pb-28" data-section="comparison">
+  <div class="wide-column">
+    <div class="prose-column">
+      <p class="sectionrule">Comparison</p>
+      <h2 class="display-lg">How it compares.</h2>
+      <p class="body-text mt-4">
+        Other clippers solve adjacent problems. trakdown is specifically for capturing rendered, authenticated pages into AI-shaped markdown.
+      </p>
+    </div>
+
+    <div class="mt-12 overflow-x-auto">
+      <table class="w-full text-left border-collapse">
+        <thead>
+          <tr class="border-b border-(--color-rule)">
+            <th class="py-3 pr-6 font-(family-name:--font-mono) text-xs uppercase tracking-wider text-(--color-muted) font-medium"></th>
+            {columns.map((col, i) => (
+              <th class={`py-3 px-4 text-sm font-medium ${i === 0 ? "text-(--color-brand-deep)" : "text-(--color-ink-soft)"}`}>
+                {col}
+              </th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((row) => (
+            <tr class="border-b border-(--color-rule)/60">
+              <td class="py-3 pr-6 body-text text-sm">{row.feature}</td>
+              {row.values.map((v, i) => (
+                <td class={`py-3 px-4 font-(family-name:--font-mono) text-sm ${i === 0 ? "text-(--color-brand-deep)" : "text-(--color-ink-soft)"}`}>
+                  {v ? "✓" : "—"}
+                </td>
+              ))}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+
+    <p class="marginalia mt-4">Claims for competitors verified manually; check before betting on them.</p>
+  </div>
+</section>

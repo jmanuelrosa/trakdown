@@ -1,0 +1,49 @@
+---
+const benefits = [
+  {
+    heading: "Works on authenticated pages",
+    body: "No API keys. No scraping. The extension runs in your already-logged-in browser tab.",
+  },
+  {
+    heading: "Structure-preserving output",
+    body: "Tables stay tables. Code blocks stay fenced. Lists nest correctly. Source URL headers every capture.",
+  },
+  {
+    heading: "No lock-in",
+    body: "Clipboard or download. Paste anywhere — Claude, ChatGPT, Obsidian, a .md file.",
+  },
+  {
+    heading: "Keyboard-first",
+    body: "⌘⇧K activates the picker on any page. Three clicks become one keystroke.",
+  },
+  {
+    heading: "Private by default",
+    body: "Page content never leaves your machine. No accounts. No telemetry.",
+  },
+  {
+    heading: "Open source",
+    body: "Read the code, file issues, fix it yourself.",
+  },
+];
+---
+
+<section class="px-6 pb-20 sm:pb-28" data-section="benefits">
+  <div class="wide-column">
+    <div class="prose-column">
+      <p class="sectionrule">Why trakdown</p>
+      <h2 class="display-lg">Built for AI workflows, not blog archives.</h2>
+    </div>
+
+    <ul class="mt-14 grid grid-cols-1 gap-x-10 gap-y-10 sm:grid-cols-2">
+      {benefits.map((b) => (
+        <li>
+          <h3 class="display-md flex items-baseline gap-2">
+            <span class="text-(--color-brand-deep) font-(family-name:--font-mono) text-xs">§</span>
+            <span>{b.heading}</span>
+          </h3>
+          <p class="body-text mt-2">{b.body}</p>
+        </li>
+      ))}
+    </ul>
+  </div>
+</section>

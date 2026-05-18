@@ -1,0 +1,213 @@
+---
+// Placeholder for the picker demo. Replace with a real video / GIF asset before launch.
+// Asset spec: 5–10 second loop showing picker on a generic auth'd dashboard → markdown → AI paste.
+---
+
+<section id="demo" class="px-6 pb-20 sm:pb-28" data-section="demo">
+  <div class="prose-column">
+    <figure>
+      <div class="frame">
+        <div class="frame__chrome" aria-hidden="true">
+          <span class="frame__dot" style="background:#FF5F57"></span>
+          <span class="frame__dot" style="background:#FEBC2E"></span>
+          <span class="frame__dot" style="background:#28C840"></span>
+          <span class="frame__url">
+            <span class="frame__lock" aria-hidden="true">🔒</span>
+            admin.acme.io/users/inactive
+          </span>
+        </div>
+
+        <div class="frame__body">
+          <div class="banner" aria-hidden="true">
+            <span class="banner__bar">▍</span> trakdown — click to capture, ↑↓ to resize, Esc to cancel
+          </div>
+
+          <div class="page">
+            <div class="page__nav">Users · Teams · Billing · Settings</div>
+            <h3 class="page__heading">Inactive users</h3>
+            <div class="page__table" aria-label="picked element">
+              <div class="page__row page__row--header">
+                <span>NAME</span><span>EMAIL</span><span>LAST&nbsp;SEEN</span>
+              </div>
+              <div class="page__row"><span>Sarah Chen</span><span>sarah@acme.io</span><span>47 days ago</span></div>
+              <div class="page__row"><span>Marcus West</span><span>marcus@acme.io</span><span>91 days ago</span></div>
+              <div class="page__row"><span>Priya Shah</span><span>priya@acme.io</span><span>124 days ago</span></div>
+            </div>
+            <p class="page__foot">Support · Docs · Status</p>
+          </div>
+
+          <div class="toast" aria-hidden="true">
+            <span class="toast__bar">▍</span> Copied 423 chars
+          </div>
+        </div>
+      </div>
+
+      <figcaption class="small mt-4">
+        Hover, click, paste. Picker captures the table — nothing else.
+        <span class="text-(--color-brand-deep) ml-2">[demo asset placeholder]</span>
+      </figcaption>
+    </figure>
+  </div>
+</section>
+
+<style>
+  .frame {
+    border: 1px solid var(--color-rule);
+    border-radius: 10px;
+    background: var(--color-bg-elev);
+    overflow: hidden;
+    box-shadow: 0 18px 48px -24px oklch(20% 0.02 80 / 0.18);
+  }
+
+  .frame__chrome {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.55rem 0.8rem;
+    border-bottom: 1px solid var(--color-rule);
+    background: oklch(92% 0.014 80);
+  }
+
+  .frame__dot {
+    display: inline-block;
+    width: 10px;
+    height: 10px;
+    border-radius: 999px;
+  }
+
+  .frame__url {
+    margin-left: 0.4rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-family: var(--font-mono);
+    font-size: 0.74rem;
+    color: var(--color-fg-muted);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .frame__lock {
+    font-size: 0.66rem;
+    opacity: 0.7;
+  }
+
+  .frame__body {
+    position: relative;
+    background: var(--color-bg-elev);
+    padding: 0;
+    min-height: 320px;
+  }
+
+  .banner {
+    position: absolute;
+    top: 12px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 2;
+    background: var(--color-fg);
+    color: var(--color-bg);
+    padding: 6px 14px;
+    border-radius: 999px;
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    letter-spacing: -0.005em;
+    box-shadow: 0 4px 16px oklch(20% 0.02 80 / 0.25);
+  }
+
+  .banner__bar {
+    color: var(--color-brand);
+    font-weight: 700;
+  }
+
+  .page {
+    padding: 56px 24px 24px;
+    font-family: var(--font-body);
+    color: var(--color-fg);
+  }
+
+  .page__nav,
+  .page__foot {
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    color: var(--color-muted);
+  }
+
+  .page__foot {
+    margin-top: 1.2rem;
+    text-align: center;
+  }
+
+  .page__heading {
+    font-family: var(--font-display);
+    font-size: 1.35rem;
+    font-weight: 600;
+    margin: 0.7rem 0 0.6rem;
+    color: var(--color-fg);
+  }
+
+  .page__table {
+    position: relative;
+    border: 2px solid var(--color-brand);
+    background: color-mix(in oklch, var(--color-brand) 10%, transparent);
+    border-radius: 4px;
+    padding: 0.6rem 0.8rem;
+  }
+
+  .page__table::after {
+    content: "picked";
+    position: absolute;
+    top: -10px;
+    right: 12px;
+    background: var(--color-brand);
+    color: var(--color-on-brand);
+    font-family: var(--font-mono);
+    font-weight: 600;
+    font-size: 0.66rem;
+    padding: 1px 6px;
+    border-radius: 3px;
+    letter-spacing: 0.02em;
+  }
+
+  .page__row {
+    display: grid;
+    grid-template-columns: 1.4fr 1.6fr 1.1fr;
+    gap: 0.6rem;
+    padding: 0.32rem 0;
+    font-size: 0.86rem;
+    border-bottom: 1px solid color-mix(in oklch, var(--color-fg) 10%, transparent);
+  }
+
+  .page__row:last-of-type {
+    border-bottom: 0;
+  }
+
+  .page__row--header {
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--color-muted);
+  }
+
+  .toast {
+    position: absolute;
+    bottom: 14px;
+    right: 14px;
+    z-index: 2;
+    background: var(--color-fg);
+    color: var(--color-bg);
+    padding: 8px 14px;
+    border-radius: 6px;
+    font-family: var(--font-mono);
+    font-size: 0.78rem;
+    box-shadow: 0 6px 22px oklch(20% 0.02 80 / 0.25);
+  }
+
+  .toast__bar {
+    color: var(--color-brand);
+    font-weight: 700;
+  }
+</style>

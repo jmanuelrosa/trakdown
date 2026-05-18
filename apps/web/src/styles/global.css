@@ -1,0 +1,319 @@
+@import "tailwindcss";
+
+@theme {
+  /* Brand palette — warm cream surface + deep teal brand. See docs/marketing/brand.md */
+  --color-brand: oklch(54% 0.09 188);
+  --color-brand-deep: oklch(40% 0.07 188);
+  --color-brand-soft: oklch(94% 0.028 188);
+  --color-on-brand: oklch(97% 0.012 85);
+
+  --color-bg: oklch(97% 0.012 85);
+  --color-bg-elev: oklch(99% 0.008 85);
+  --color-fg: oklch(20% 0.008 80);
+  --color-fg-muted: oklch(45% 0.012 80);
+  --color-muted: oklch(58% 0.012 80);
+  --color-rule: oklch(86% 0.015 80);
+  --color-highlight: oklch(94% 0.028 188);
+
+  /* Typography */
+  --font-display: "JetBrains Mono", "SF Mono", Menlo, monospace;
+  --font-body: "Manrope", "Inter", -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-mono: "JetBrains Mono", "SF Mono", Menlo, monospace;
+
+  /* Container widths */
+  --container-prose: 42rem;
+  --container-wide: 68rem;
+
+  /* Motion */
+  --animate-rise: rise 0.7s cubic-bezier(0.16, 1, 0.3, 1) backwards;
+  --animate-fade: fade 0.5s ease-out backwards;
+
+  @keyframes rise {
+    from {
+      opacity: 0;
+      transform: translateY(0.75rem);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @keyframes fade {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+}
+
+@layer base {
+  :root {
+    color-scheme: light;
+  }
+
+  html {
+    font-family: var(--font-body);
+    background: var(--color-bg);
+    color: var(--color-fg);
+  }
+
+  body {
+    text-rendering: optimizeLegibility;
+    font-feature-settings: "kern", "liga", "calt", "ss01";
+    font-optical-sizing: auto;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    position: relative;
+    min-height: 100dvh;
+  }
+
+  /* Warm paper texture — barely-there noise + a subtle teal-tinted vignette toward the top */
+  body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+    background-image:
+      radial-gradient(ellipse at 50% -10%, oklch(80% 0.06 188 / 0.16), transparent 55%),
+      url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='220' height='220'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.92' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 0.045 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+    mix-blend-mode: multiply;
+    opacity: 0.65;
+  }
+
+  main, header, footer {
+    position: relative;
+    z-index: 1;
+  }
+
+  ::selection {
+    background: var(--color-brand-soft);
+    color: var(--color-fg);
+  }
+
+  a {
+    color: var(--color-brand);
+    text-decoration: underline;
+    text-decoration-color: color-mix(in oklch, var(--color-brand) 50%, transparent);
+    text-decoration-thickness: 1.5px;
+    text-underline-offset: 0.2em;
+    transition: color 160ms ease, text-decoration-color 160ms ease;
+  }
+
+  a:hover {
+    color: var(--color-brand-deep);
+    text-decoration-color: var(--color-brand-deep);
+  }
+
+  hr {
+    border: 0;
+    border-top: 1px solid var(--color-rule);
+    margin: 0;
+  }
+
+  h1, h2, h3, h4 {
+    font-family: var(--font-display);
+    font-weight: 500;
+    letter-spacing: -0.025em;
+    color: var(--color-fg);
+  }
+
+  code, kbd {
+    font-family: var(--font-mono);
+    font-size: 0.92em;
+  }
+}
+
+@layer components {
+  .prose-column {
+    max-width: var(--container-prose);
+    margin-inline: auto;
+  }
+
+  .wide-column {
+    max-width: var(--container-wide);
+    margin-inline: auto;
+  }
+
+  .display-xl {
+    font-family: var(--font-display);
+    font-weight: 500;
+    font-size: clamp(2.1rem, 5vw, 3.85rem);
+    line-height: 1.06;
+    letter-spacing: -0.04em;
+  }
+
+  .display-lg {
+    font-family: var(--font-display);
+    font-weight: 500;
+    font-size: clamp(1.55rem, 2.6vw, 2.05rem);
+    line-height: 1.15;
+    letter-spacing: -0.03em;
+  }
+
+  .display-md {
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-size: clamp(1.05rem, 1.4vw, 1.18rem);
+    line-height: 1.3;
+    letter-spacing: -0.02em;
+  }
+
+  .lede {
+    font-family: var(--font-body);
+    font-weight: 400;
+    font-size: 1.18rem;
+    line-height: 1.55;
+    color: var(--color-fg-muted);
+  }
+
+  .body-text {
+    font-family: var(--font-body);
+    font-weight: 400;
+    font-size: 1.04rem;
+    line-height: 1.7;
+    color: var(--color-fg);
+  }
+
+  .body-text p + p {
+    margin-top: 1.1em;
+  }
+
+  .body-text strong {
+    font-weight: 600;
+    color: var(--color-fg);
+  }
+
+  .body-text em {
+    font-style: italic;
+    color: var(--color-fg-muted);
+  }
+
+  .small {
+    font-family: var(--font-mono);
+    font-size: 0.78rem;
+    color: var(--color-muted);
+  }
+
+  .kbd {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.14em 0.5em;
+    border: 1px solid var(--color-rule);
+    border-bottom-width: 2px;
+    border-radius: 4px;
+    background: var(--color-bg-elev);
+    font-family: var(--font-mono);
+    font-weight: 500;
+    font-size: 0.78em;
+    line-height: 1;
+    color: var(--color-fg);
+  }
+
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.78rem 1.25rem;
+    font-family: var(--font-mono);
+    font-size: 0.9rem;
+    font-weight: 500;
+    letter-spacing: -0.005em;
+    line-height: 1;
+    border-radius: 6px;
+    border: 1px solid transparent;
+    transition: transform 120ms ease, background 160ms ease, color 160ms ease, border-color 160ms ease;
+    cursor: pointer;
+    text-decoration: none;
+  }
+
+  .btn-primary {
+    background: var(--color-brand);
+    color: var(--color-on-brand);
+    border-color: var(--color-brand);
+  }
+
+  .btn-primary:hover {
+    background: var(--color-brand-deep);
+    border-color: var(--color-brand-deep);
+    color: var(--color-on-brand);
+    transform: translateY(-1px);
+  }
+
+  .btn-ghost {
+    background: transparent;
+    color: var(--color-fg);
+    border-color: var(--color-rule);
+  }
+
+  .btn-ghost:hover {
+    background: var(--color-bg-elev);
+    border-color: var(--color-fg-muted);
+    color: var(--color-brand-deep);
+    transform: translateY(-1px);
+  }
+
+  .wordmark {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-family: var(--font-mono);
+    font-size: 0.95rem;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    color: var(--color-fg);
+    text-decoration: none;
+  }
+
+  .wordmark::before {
+    content: "▍";
+    color: var(--color-brand);
+    font-weight: 700;
+  }
+
+  .sectionrule {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    color: var(--color-muted);
+    font-family: var(--font-mono);
+    font-size: 0.74rem;
+    font-weight: 500;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    margin-bottom: 2rem;
+  }
+
+  .sectionrule::before {
+    content: "";
+    width: 1.5rem;
+    border-top: 1px solid var(--color-rule);
+  }
+
+  .sectionrule::after {
+    content: "";
+    flex: 1;
+    border-top: 1px solid var(--color-rule);
+  }
+
+  .marginalia {
+    font-family: var(--font-mono);
+    font-size: 0.76rem;
+    line-height: 1.55;
+    color: var(--color-muted);
+  }
+
+  /* Highlighter mark — soft teal underlay for emphasized words inline */
+  .hl {
+    background: linear-gradient(180deg, transparent 58%, var(--color-brand-soft) 58%, var(--color-brand-soft) 92%, transparent 92%);
+    color: var(--color-fg);
+    padding: 0 0.06em;
+  }
+
+  .hl-text {
+    color: var(--color-brand);
+  }
+}
