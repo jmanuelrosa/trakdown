@@ -1,0 +1,62 @@
+name: Bug report
+description: Report something broken in the extension or landing page
+title: "bug: "
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to file a bug report. For security issues, please use the [private security advisory](https://github.com/jmanuelrosa/trakdown/security/advisories/new) instead of a public issue.
+
+  - type: dropdown
+    id: component
+    attributes:
+      label: Which part is broken?
+      options:
+        - Extension — element picker
+        - Extension — text selection
+        - Extension — full-page capture
+        - Extension — AI Deep Clean
+        - Extension — popup UI / keyboard shortcut
+        - Landing page (apps/web)
+        - CI / GitHub Actions
+        - Other
+    validations:
+      required: true
+
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: A clear description of the bug and what you expected instead.
+      placeholder: "When I clicked X on FOSSA, the picker overlay was invisible. Expected: the picker highlights the element under the cursor."
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Open https://example.com/...
+        2. Click the trakdown extension icon
+        3. Click "Pick element"
+        4. Observe ...
+    validations:
+      required: true
+
+  - type: input
+    id: environment
+    attributes:
+      label: Environment
+      description: Browser + version, OS, extension version (from chrome://extensions)
+      placeholder: "Chrome 138.0.7204.92, macOS 14.5, trakdown 0.0.1"
+    validations:
+      required: true
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Console output / errors
+      description: Any messages from DevTools console (right-click → Inspect → Console). Filter for "[trakdown]" if there's a lot.
+      render: text
