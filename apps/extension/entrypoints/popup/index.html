@@ -19,25 +19,49 @@
     </header>
     <main>
       <div class="actions">
-        <button id="capture-element" type="button" data-mode="element" class="btn btn-primary">
+        <button
+          id="capture-element"
+          type="button"
+          data-mode="element"
+          data-command="capture-element"
+          class="btn btn-primary"
+        >
           <span class="btn-label">Pick element</span>
-          <kbd>⌘⇧K</kbd>
+          <kbd hidden></kbd>
         </button>
-        <button id="capture-selection" type="button" data-mode="selection" class="btn btn-ghost">
-          Capture selection
+        <button
+          id="capture-selection"
+          type="button"
+          data-mode="selection"
+          data-command="capture-selection"
+          class="btn btn-ghost"
+        >
+          <span class="btn-label">Capture selection</span>
+          <kbd hidden></kbd>
         </button>
-        <button id="capture-page" type="button" data-mode="page" class="btn btn-ghost">
-          Capture page
+        <button
+          id="capture-page"
+          type="button"
+          data-mode="page"
+          data-command="capture-page"
+          class="btn btn-ghost"
+        >
+          <span class="btn-label">Capture page</span>
+          <kbd hidden></kbd>
         </button>
         <button
           id="capture-page-ai"
           type="button"
           data-mode="page-ai"
+          data-command="capture-page-ai"
           class="btn btn-ghost btn-ai"
           data-ai-state="checking"
           disabled
         >
-          <span class="label">Capture page (AI clean)</span>
+          <span class="btn-top">
+            <span class="label">Capture page (AI clean)</span>
+            <kbd hidden></kbd>
+          </span>
           <span class="hint">checking on-device AI…</span>
         </button>
       </div>

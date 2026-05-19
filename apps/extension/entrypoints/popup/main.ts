@@ -4,16 +4,20 @@ import type { CaptureMode, CaptureRequest, CaptureResponse } from "@/lib/messagi
 const statusEl = document.getElementById("status") as HTMLParagraphElement;
 const aiButton = document.querySelector<HTMLButtonElement>('button[data-mode="page-ai"]');
 
+let busyButton: HTMLButtonElement | null = null;
+
 document.querySelectorAll<HTMLButtonElement>("button[data-mode]").forEach((btn) => {
   btn.addEventListener("click", () => {
-    if (btn.disabled) return;
+    if (busyButton || btn.disabled) return;
     const mode = btn.dataset.mode as CaptureMode | undefined;
     if (!mode) return;
-    void runCapture(mode);
+    setBusy(btn);
+    void runCapture(mode).finally(setIdle);
   });
 });
 
 void initAi();
+void populateShortcuts();
 
 async function initAi(): Promise<void> {
   if (!aiButton) return;
@@ -43,6 +47,44 @@ function applyAiState(btn: HTMLButtonElement, state: AiAvailability): void {
   if (hintEl) hintEl.textContent = hints[state];
   btn.disabled = isDisabled[state];
   btn.title = hints[state];
+}
+
+// Populate the <kbd> on each button with the user's current chrome.commands
+// binding. If a command is unbound (user removed it), hide the badge.
+async function populateShortcuts(): Promise<void> {
+  if (typeof chrome === "undefined" || !chrome.commands?.getAll) return;
+  try {
+    const commands = await chrome.commands.getAll();
+    const byName = new Map(commands.map((c) => [c.name ?? "", c.shortcut ?? ""]));
+    document.querySelectorAll<HTMLButtonElement>("button[data-command]").forEach((btn) => {
+      const cmdName = btn.dataset.command;
+      const kbd = btn.querySelector<HTMLElement>("kbd");
+      if (!kbd || !cmdName) return;
+      const shortcut = byName.get(cmdName);
+      if (shortcut) {
+        kbd.textContent = shortcut;
+        kbd.hidden = false;
+      } else {
+        kbd.hidden = true;
+      }
+    });
+  } catch {
+    // Silent — popup just won't show shortcut badges.
+  }
+}
+
+function setBusy(btn: HTMLButtonElement): void {
+  busyButton = btn;
+  document.body.classList.add("is-busy");
+  btn.classList.add("is-active");
+}
+
+function setIdle(): void {
+  if (busyButton) {
+    busyButton.classList.remove("is-active");
+    busyButton = null;
+  }
+  document.body.classList.remove("is-busy");
 }
 
 async function runCapture(mode: CaptureMode): Promise<void> {
