@@ -164,13 +164,13 @@ async function runCapture(mode: CaptureMode): Promise<void> {
   }
 
   if (res?.pending) {
-    if (mode === "element") {
-      setStatus("Pick an element on the page. Click to capture, ↑↓ to resize, Esc to cancel.");
-    } else if (mode === "page-ai") {
-      setStatus("AI cleaning page — toast will appear when done.");
-    } else {
-      setStatus("Working…");
-    }
+    // Pending modes (picker, AI clean) are fire-and-forget from the popup —
+    // the on-page banner and the eventual toast carry the user feedback.
+    // Closing the popup here matters most for picker: Chrome's popup-close
+    // behaviour was eating the user's first click on the page, requiring a
+    // second click to actually pick. With the popup gone before the user's
+    // next click, the picker receives it the first time.
+    window.close();
     return;
   }
 

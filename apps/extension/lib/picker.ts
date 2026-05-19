@@ -75,8 +75,12 @@ export function activatePicker(): Promise<PickerResult | null> {
       e.preventDefault();
       e.stopPropagation();
       e.stopImmediatePropagation();
-      if (!current) return;
-      const chosen = current;
+      // Prefer `current` (set by mousemove, adjusted by arrow keys) since
+      // that's what the overlay was painting. Fall back to elementsFromPoint
+      // at the click coordinates when mousemove hasn't fired yet — e.g. the
+      // user clicks immediately after activation without moving the cursor.
+      const chosen = current ?? pickElementAt(e.clientX, e.clientY, overlay, banner);
+      if (!chosen) return;
       stop();
       resolve({ element: chosen, selector: cssSelectorPath(chosen) });
     };
