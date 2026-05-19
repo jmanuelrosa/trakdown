@@ -3,6 +3,7 @@ import type { CaptureMode, CaptureRequest, CaptureResponse } from "@/lib/messagi
 
 const statusEl = document.getElementById("status") as HTMLParagraphElement;
 const aiButton = document.querySelector<HTMLButtonElement>('button[data-mode="page-ai"]');
+const selectionButton = document.querySelector<HTMLButtonElement>('button[data-mode="selection"]');
 
 let busyButton: HTMLButtonElement | null = null;
 
@@ -18,6 +19,7 @@ document.querySelectorAll<HTMLButtonElement>("button[data-mode]").forEach((btn) 
 
 void initAi();
 void populateShortcuts();
+void initSelectionAvailability();
 
 async function initAi(): Promise<void> {
   if (!aiButton) return;
@@ -73,6 +75,33 @@ async function populateShortcuts(): Promise<void> {
   }
 }
 
+// Selection mode requires text to be selected on the page when the popup
+// opens. If nothing is selected, disable the button and explain via title.
+async function initSelectionAvailability(): Promise<void> {
+  if (!selectionButton) return;
+  const hasSelection = await checkPageSelection();
+  if (!hasSelection) {
+    selectionButton.disabled = true;
+    selectionButton.title = "Select text on the page first, then reopen this popup.";
+    selectionButton.dataset.reason = "no-selection";
+  }
+}
+
+async function checkPageSelection(): Promise<boolean> {
+  const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+  if (!tab?.id) return false;
+  try {
+    const res = (await chrome.tabs.sendMessage(tab.id, {
+      type: "trakdown:check-selection",
+    })) as { hasSelection?: boolean } | undefined;
+    return Boolean(res?.hasSelection);
+  } catch {
+    // Content script not loaded (chrome:// page, extension just installed,
+    // etc.) — assume enabled and let the capture flow surface any real error.
+    return true;
+  }
+}
+
 function setBusy(btn: HTMLButtonElement): void {
   busyButton = btn;
   document.body.classList.add("is-busy");
@@ -122,8 +151,10 @@ async function runCapture(mode: CaptureMode): Promise<void> {
   }
 
   if (!res?.ok || !res.markdown) {
-    if (mode === "selection" && !res?.error) {
-      setStatus("No text selected on the page.");
+    // Selection mode without text is expected, not a failure — show a hint
+    // instead of the alarming "Failed: …" prefix.
+    if (mode === "selection" && (/no text selected/i.test(res?.error ?? "") || !res?.error)) {
+      setStatus("Select text on the page first, then try again.");
       return;
     }
     setStatus(`Failed: ${res?.error ?? "no response"}`);

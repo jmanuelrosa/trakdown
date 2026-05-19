@@ -10,6 +10,12 @@ export default defineContentScript({
   runAt: "document_idle",
   main() {
     chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
+      if (isCheckSelectionRequest(msg)) {
+        const sel = window.getSelection();
+        const hasSelection = sel ? sel.toString().trim() !== "" : false;
+        sendResponse({ hasSelection });
+        return false;
+      }
       if (!isCaptureRequest(msg)) return;
       void handleCapture(msg).then(sendResponse);
       return true;
@@ -22,6 +28,14 @@ function isCaptureRequest(value: unknown): value is CaptureRequest {
     typeof value === "object" &&
     value !== null &&
     (value as { type?: unknown }).type === "trakdown:capture"
+  );
+}
+
+function isCheckSelectionRequest(value: unknown): boolean {
+  return (
+    typeof value === "object" &&
+    value !== null &&
+    (value as { type?: unknown }).type === "trakdown:check-selection"
   );
 }
 
@@ -42,7 +56,10 @@ async function handleCapture(msg: CaptureRequest): Promise<CaptureResponse> {
   try {
     const captured = capture(msg.mode);
     if (!captured) {
-      return { ok: false, error: `mode "${msg.mode}" not yet implemented` };
+      if (msg.mode === "selection") {
+        return { ok: false, error: "no text selected on the page" };
+      }
+      return { ok: false, error: `unsupported mode "${msg.mode}"` };
     }
     const markdown = buildMarkdown({
       body: htmlToMarkdown(captured.html),
