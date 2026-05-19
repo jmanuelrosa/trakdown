@@ -1,0 +1,56 @@
+name: Feature request
+description: Suggest an improvement or a new capability
+title: "feat: "
+labels: [enhancement]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Before filing, please skim [`docs/ideas/trakdown.md`](https://github.com/jmanuelrosa/trakdown/blob/main/docs/ideas/trakdown.md) — the "Not Doing (and Why)" section explains scope decisions that are intentional.
+
+  - type: dropdown
+    id: surface
+    attributes:
+      label: Which surface does this affect?
+      options:
+        - Extension — capture flow
+        - Extension — popup UI
+        - Extension — AI Deep Clean
+        - Landing page
+        - CI / tooling
+        - Docs
+        - New capability (none of the above)
+    validations:
+      required: true
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: What problem does this solve?
+      description: Describe the situation that makes you want this feature, not the feature itself.
+      placeholder: "When I try to capture a Jira comment thread, the picker doesn't expand to include the reply nest. I end up running the picker three times."
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed solution
+      description: Your idea for how to solve it. It's fine to leave this rough — the maintainer may have a different angle.
+      placeholder: "Add a 'capture parent thread' option that walks up to the nearest data-section ancestor."
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+      description: Other approaches you thought about and rejected, and why.
+
+  - type: checkboxes
+    id: scope-check
+    attributes:
+      label: Scope check
+      options:
+        - label: I've read the "Not Doing (and Why)" section in `docs/ideas/trakdown.md` and this isn't on that list.
+          required: true
