@@ -1,6 +1,8 @@
 import { type ExtractResult, extractMain, extractMainWithAi } from "@/lib/extract";
+import { buildFrontmatter, type FrontmatterMap } from "@/lib/frontmatter";
 import { htmlToMarkdown } from "@/lib/markdown";
 import type { CaptureRequest, CaptureResponse } from "@/lib/messaging";
+import { extractPageMetadata } from "@/lib/metadata";
 import { activatePicker, isPickerActive, showToast } from "@/lib/picker";
 
 export default defineContentScript({
@@ -42,9 +44,11 @@ async function handleCapture(msg: CaptureRequest): Promise<CaptureResponse> {
     if (!captured) {
       return { ok: false, error: `mode "${msg.mode}" not yet implemented` };
     }
-    const body = htmlToMarkdown(captured.html);
-    const header = buildHeader(captured.title);
-    return { ok: true, markdown: header + body, source: captured.source };
+    const markdown = buildMarkdown({
+      body: htmlToMarkdown(captured.html),
+      titleOverride: captured.title,
+    });
+    return { ok: true, markdown, source: captured.source };
   } catch (err) {
     return { ok: false, error: err instanceof Error ? err.message : String(err) };
   }
@@ -78,9 +82,10 @@ async function runPicker(): Promise<void> {
   if (!result) return;
 
   try {
-    const body = htmlToMarkdown(result.element.outerHTML);
-    const header = buildHeader();
-    const markdown = header + body;
+    const markdown = buildMarkdown({
+      body: htmlToMarkdown(result.element.outerHTML),
+      selector: result.selector,
+    });
     await navigator.clipboard.writeText(markdown);
     showToast(`Copied ${markdown.length.toLocaleString()} chars`);
   } catch (err) {
@@ -95,9 +100,10 @@ async function runAiCapture(): Promise<void> {
   showToast("AI cleaning page…");
   try {
     const result = await extractMainWithAi(document);
-    const body = htmlToMarkdown(result.html);
-    const header = buildHeader(result.title);
-    const markdown = header + body;
+    const markdown = buildMarkdown({
+      body: htmlToMarkdown(result.html),
+      titleOverride: result.title,
+    });
     await navigator.clipboard.writeText(markdown);
     const tag = result.source === "ai-clean" ? "AI clean" : `${result.source} fallback`;
     showToast(`Copied ${markdown.length.toLocaleString()} chars (${tag})`);
@@ -109,7 +115,58 @@ async function runAiCapture(): Promise<void> {
   }
 }
 
-function buildHeader(titleOverride?: string): string {
-  const title = (titleOverride ?? document.title).trim() || location.href;
-  return `# ${title}\n\n[Source](${location.href})\n\n---\n\n`;
+interface BuildMarkdownOpts {
+  body: string;
+  titleOverride?: string;
+  selector?: string;
+}
+
+function buildMarkdown(opts: BuildMarkdownOpts): string {
+  const meta = extractPageMetadata(document);
+  const url = new URL(location.href);
+  const title = (opts.titleOverride ?? meta.title ?? document.title).trim() || location.href;
+
+  const wordCount = countWords(opts.body);
+  const readingTime = wordCount > 0 ? Math.max(1, Math.round(wordCount / 200)) : undefined;
+
+  const fm: FrontmatterMap = {
+    title,
+    source: location.href,
+    domain: url.hostname,
+    captured_at: new Date().toISOString(),
+    site: meta.site,
+    language: meta.language,
+    author: meta.author,
+    published: meta.published,
+    word_count: wordCount || undefined,
+    reading_time_min: readingTime,
+    excerpt: makeExcerpt(opts.body),
+    selector: opts.selector,
+  };
+
+  return buildFrontmatter(fm) + opts.body;
+}
+
+function countWords(markdown: string): number {
+  const text = markdown
+    .replace(/```[\s\S]*?```/g, " ")
+    .replace(/`[^`]*`/g, " ")
+    .replace(/[#>*_~\-[\]()]/g, " ")
+    .trim();
+  if (!text) return 0;
+  return text.split(/\s+/).length;
+}
+
+function makeExcerpt(markdown: string, maxLen = 180): string | undefined {
+  const text = markdown
+    .replace(/```[\s\S]*?```/g, " ")
+    .replace(/`([^`]+)`/g, "$1")
+    .replace(/\[([^\]]+)\]\([^)]+\)/g, "$1")
+    .replace(/[#>*_~]/g, "")
+    .replace(/\n+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+  if (!text) return undefined;
+  if (text.length <= maxLen) return text;
+  return `${text.slice(0, maxLen - 1).trimEnd()}…`;
 }
