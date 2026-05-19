@@ -21,6 +21,11 @@ export default defineContentScript({
         sendResponse({ cancelled });
         return false;
       }
+      if (isShowToastRequest(msg)) {
+        showToast(msg.message, { variant: msg.variant ?? "success" });
+        sendResponse({ shown: true });
+        return false;
+      }
       if (!isCaptureRequest(msg)) return;
       void handleCapture(msg).then(sendResponse);
       return true;
@@ -50,6 +55,14 @@ function isCancelPickerRequest(value: unknown): boolean {
     value !== null &&
     (value as { type?: unknown }).type === "trakdown:cancel-picker"
   );
+}
+
+function isShowToastRequest(
+  value: unknown,
+): value is { type: "trakdown:show-toast"; message: string; variant?: "success" | "error" } {
+  if (typeof value !== "object" || value === null) return false;
+  const v = value as { type?: unknown; message?: unknown };
+  return v.type === "trakdown:show-toast" && typeof v.message === "string";
 }
 
 async function handleCapture(msg: CaptureRequest): Promise<CaptureResponse> {

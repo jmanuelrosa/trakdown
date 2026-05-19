@@ -141,8 +141,6 @@ function setIdle(): void {
 }
 
 async function runCapture(mode: CaptureMode): Promise<void> {
-  setStatus("Capturing…");
-
   const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
   if (!tab?.id) {
     setStatus("No active tab.");
@@ -155,6 +153,9 @@ async function runCapture(mode: CaptureMode): Promise<void> {
   try {
     res = await chrome.tabs.sendMessage<CaptureRequest, CaptureResponse>(tab.id, req);
   } catch (err) {
+    // Page unreachable (chrome:// URL, extension just installed, etc.) — can't
+    // surface this via an on-page toast. Keep the popup open with the inline
+    // status instead so the user has somewhere to read the error.
     setStatus(
       `Can't reach this page. Reload the tab and try again. (${
         err instanceof Error ? err.message : String(err)
@@ -164,36 +165,51 @@ async function runCapture(mode: CaptureMode): Promise<void> {
   }
 
   if (res?.pending) {
-    // Pending modes (picker, AI clean) are fire-and-forget from the popup —
-    // the on-page banner and the eventual toast carry the user feedback.
-    // Closing the popup here matters most for picker: Chrome's popup-close
-    // behaviour was eating the user's first click on the page, requiring a
-    // second click to actually pick. With the popup gone before the user's
-    // next click, the picker receives it the first time.
+    // Picker / AI clean are fire-and-forget from the popup's perspective.
+    // The on-page banner + the eventual toast from the content script carry
+    // all the feedback. Closing the popup also keeps Chrome from eating the
+    // user's first click on the page (popup-close consumed it before).
     window.close();
     return;
   }
 
-  if (!res?.ok || !res.markdown) {
-    // Selection mode without text is expected, not a failure — show a hint
-    // instead of the alarming "Failed: …" prefix.
-    if (mode === "selection" && (/no text selected/i.test(res?.error ?? "") || !res?.error)) {
-      setStatus("Select text on the page first, then try again.");
-      return;
+  if (res?.ok && res.markdown) {
+    const markdown = res.markdown;
+    try {
+      // Clipboard write runs in the popup (which has the click gesture).
+      await navigator.clipboard.writeText(markdown);
+      const sourceTag = res.source ? ` (${res.source})` : "";
+      void showPageToast(tab.id, `Copied ${markdown.length.toLocaleString()} chars${sourceTag}`);
+    } catch (err) {
+      void showPageToast(
+        tab.id,
+        `Captured but couldn't write to clipboard: ${
+          err instanceof Error ? err.message : String(err)
+        }`,
+        "error",
+      );
     }
-    setStatus(`Failed: ${res?.error ?? "no response"}`);
+    window.close();
     return;
   }
 
-  try {
-    await navigator.clipboard.writeText(res.markdown);
-    const sourceTag = res.source ? ` (${res.source})` : "";
-    setStatus(`Copied ${res.markdown.length.toLocaleString()} chars${sourceTag}.`);
-  } catch (err) {
-    setStatus(
-      `Captured but couldn't write clipboard: ${err instanceof Error ? err.message : String(err)}`,
-    );
-  }
+  // Synchronous error — toast the result on the page and close.
+  const message =
+    mode === "selection" && (/no text selected/i.test(res?.error ?? "") || !res?.error)
+      ? "Select text on the page first, then try again."
+      : `Capture failed: ${res?.error ?? "no response"}`;
+  void showPageToast(tab.id, message, "error");
+  window.close();
+}
+
+function showPageToast(
+  tabId: number,
+  message: string,
+  variant: "success" | "error" = "success",
+): Promise<unknown> {
+  return chrome.tabs
+    .sendMessage(tabId, { type: "trakdown:show-toast", message, variant })
+    .catch(() => undefined);
 }
 
 function setStatus(msg: string): void {
