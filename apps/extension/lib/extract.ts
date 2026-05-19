@@ -2,7 +2,18 @@ import { Readability } from "@mozilla/readability";
 import { aiExtract } from "./ai-extract";
 import { precleanHtmlForAi } from "./preclean";
 
-export type ExtractSource = "readability" | "fallback" | "selection" | "picker" | "ai-clean";
+// Enum-shaped object literal with a derived type. Acts like an enum at call
+// sites (ExtractSource.Readability) while staying tree-shakeable and
+// compatible with TS strip-types (Node 22+ --experimental-strip-types).
+export const ExtractSource = {
+  Readability: "readability",
+  Fallback: "fallback",
+  Selection: "selection",
+  Picker: "picker",
+  AiClean: "ai-clean",
+} as const;
+
+export type ExtractSource = (typeof ExtractSource)[keyof typeof ExtractSource];
 
 export interface ExtractResult {
   html: string;
@@ -19,20 +30,20 @@ export function extractMain(doc: Document): ExtractResult {
       return {
         html: article.content,
         title: title || undefined,
-        source: "readability",
+        source: ExtractSource.Readability,
       };
     }
   } catch (err) {
     console.warn("[trakdown] readability extraction failed:", err);
   }
-  return { html: doc.body.outerHTML, source: "fallback" };
+  return { html: doc.body.outerHTML, source: ExtractSource.Fallback };
 }
 
 export async function extractMainWithAi(doc: Document): Promise<ExtractResult> {
   const precleaned = precleanHtmlForAi(doc);
   const ai = await aiExtract(precleaned);
   if (ai?.html) {
-    return { html: ai.html, title: doc.title, source: "ai-clean" };
+    return { html: ai.html, title: doc.title, source: ExtractSource.AiClean };
   }
   // AI unavailable or returned nothing — fall back to Readability + raw HTML chain.
   return extractMain(doc);

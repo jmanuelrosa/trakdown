@@ -1,4 +1,4 @@
-import { type ExtractResult, extractMain, extractMainWithAi } from "@/lib/extract";
+import { type ExtractResult, ExtractSource, extractMain, extractMainWithAi } from "@/lib/extract";
 import { buildFrontmatter, type FrontmatterMap } from "@/lib/frontmatter";
 import { htmlToMarkdown } from "@/lib/markdown";
 import type { CaptureRequest, CaptureResponse } from "@/lib/messaging";
@@ -78,12 +78,12 @@ async function handleCapture(msg: CaptureRequest): Promise<CaptureResponse> {
       return { ok: false, error: "picker already active" };
     }
     void runPicker();
-    return { ok: true, pending: true, source: "picker" };
+    return { ok: true, pending: true, source: ExtractSource.Picker };
   }
 
   if (msg.mode === "page-ai") {
     void runAiCapture();
-    return { ok: true, pending: true, source: "ai-clean" };
+    return { ok: true, pending: true, source: ExtractSource.AiClean };
   }
 
   try {
@@ -124,7 +124,7 @@ function captureSelection(): ExtractResult | null {
   for (let i = 0; i < sel.rangeCount; i++) {
     container.appendChild(sel.getRangeAt(i).cloneContents());
   }
-  return { html: container.innerHTML, source: "selection" };
+  return { html: container.innerHTML, source: ExtractSource.Selection };
 }
 
 async function runPicker(): Promise<void> {
@@ -155,7 +155,7 @@ async function runAiCapture(): Promise<void> {
       titleOverride: result.title,
     });
     await navigator.clipboard.writeText(markdown);
-    const tag = result.source === "ai-clean" ? "AI clean" : `${result.source} fallback`;
+    const tag = result.source === ExtractSource.AiClean ? "AI clean" : `${result.source} fallback`;
     showToast(`Copied ${markdown.length.toLocaleString()} chars (${tag})`);
   } catch (err) {
     console.warn("[trakdown] AI capture failed:", err);
