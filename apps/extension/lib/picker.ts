@@ -6,6 +6,7 @@ const Z_INDEX = 2147483647;
 
 export interface PickerResult {
   element: HTMLElement;
+  selector: string;
 }
 
 let active = false;
@@ -62,7 +63,7 @@ export function activatePicker(): Promise<PickerResult | null> {
       if (!current) return;
       const chosen = current;
       stop();
-      resolve({ element: chosen });
+      resolve({ element: chosen, selector: cssSelectorPath(chosen) });
     };
 
     const onKeyDown = (e: KeyboardEvent) => {
@@ -123,6 +124,37 @@ function pickElementAt(x: number, y: number, ...exclude: Element[]): HTMLElement
     if (el instanceof HTMLElement) return el;
   }
   return null;
+}
+
+// Build a "reasonable" CSS selector path for a picked element. Walks up to <body>,
+// stops early at any element with an id (since ids are unique), keeps up to two
+// class names per step. Output is for human reference / reproducibility, not
+// guaranteed to be unique on dynamic SPAs.
+function cssSelectorPath(target: Element): string {
+  const parts: string[] = [];
+  let current: Element | null = target;
+  while (current && current !== document.body && current.tagName !== "HTML") {
+    let part = current.tagName.toLowerCase();
+    if (current.id) {
+      parts.unshift(`${part}#${current.id}`);
+      return parts.join(" > ");
+    }
+    const classes = classListString(current);
+    if (classes) part += `.${classes}`;
+    parts.unshift(part);
+    current = current.parentElement;
+  }
+  return parts.join(" > ");
+}
+
+function classListString(el: Element): string {
+  const raw = typeof el.className === "string" ? el.className : "";
+  return raw
+    .trim()
+    .split(/\s+/)
+    .filter((c) => c && !c.includes(":") && !c.includes("[") && c.length < 40)
+    .slice(0, 2)
+    .join(".");
 }
 
 function createOverlay(): HTMLDivElement {
