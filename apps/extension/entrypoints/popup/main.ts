@@ -17,6 +17,30 @@ document.querySelectorAll<HTMLButtonElement>("button[data-mode]").forEach((btn) 
   });
 });
 
+// Pressing Esc inside the popup forwards to the content script so any picker
+// running on the active tab is dismissed. Without this, Esc only reaches the
+// page when the popup has lost focus — the user's most common 'just cancel
+// it' instinct otherwise leaves the overlay stuck on screen.
+document.addEventListener("keydown", (e) => {
+  if (e.key !== "Escape") return;
+  void cancelPickerOnActiveTab().then((cancelled) => {
+    if (cancelled) setStatus("Picker cancelled.");
+  });
+});
+
+async function cancelPickerOnActiveTab(): Promise<boolean> {
+  const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+  if (!tab?.id) return false;
+  try {
+    const res = (await chrome.tabs.sendMessage(tab.id, {
+      type: "trakdown:cancel-picker",
+    })) as { cancelled?: boolean } | undefined;
+    return Boolean(res?.cancelled);
+  } catch {
+    return false;
+  }
+}
+
 void initAi();
 void populateShortcuts();
 void initSelectionAvailability();

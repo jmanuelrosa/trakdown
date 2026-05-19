@@ -10,9 +10,21 @@ export interface PickerResult {
 }
 
 let active = false;
+// Stashed so cancelPicker() can settle the in-flight promise and tear down the
+// listeners from outside the picker's own event scope (e.g. when the popup
+// presses Esc, or when a different capture mode supersedes the picker).
+let cancelHandle: { resolve: (v: PickerResult | null) => void; stop: () => void } | null = null;
 
 export function isPickerActive(): boolean {
   return active;
+}
+
+export function cancelPicker(): boolean {
+  if (!cancelHandle) return false;
+  const { resolve, stop } = cancelHandle;
+  stop();
+  resolve(null);
+  return true;
 }
 
 export function activatePicker(): Promise<PickerResult | null> {
@@ -29,6 +41,7 @@ export function activatePicker(): Promise<PickerResult | null> {
 
     const stop = () => {
       active = false;
+      cancelHandle = null;
       overlay.remove();
       banner.remove();
       document.removeEventListener("mousemove", onMouseMove, true);
@@ -37,6 +50,8 @@ export function activatePicker(): Promise<PickerResult | null> {
       window.removeEventListener("scroll", onScroll, true);
       window.removeEventListener("resize", onScroll, true);
     };
+
+    cancelHandle = { resolve, stop };
 
     const paint = (el: HTMLElement | null) => {
       current = el;

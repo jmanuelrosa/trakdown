@@ -3,7 +3,7 @@ import { buildFrontmatter, type FrontmatterMap } from "@/lib/frontmatter";
 import { htmlToMarkdown } from "@/lib/markdown";
 import type { CaptureRequest, CaptureResponse } from "@/lib/messaging";
 import { extractPageMetadata } from "@/lib/metadata";
-import { activatePicker, isPickerActive, showToast } from "@/lib/picker";
+import { activatePicker, cancelPicker, isPickerActive, showToast } from "@/lib/picker";
 
 export default defineContentScript({
   matches: ["<all_urls>"],
@@ -14,6 +14,11 @@ export default defineContentScript({
         const sel = window.getSelection();
         const hasSelection = sel ? sel.toString().trim() !== "" : false;
         sendResponse({ hasSelection });
+        return false;
+      }
+      if (isCancelPickerRequest(msg)) {
+        const cancelled = cancelPicker();
+        sendResponse({ cancelled });
         return false;
       }
       if (!isCaptureRequest(msg)) return;
@@ -39,7 +44,22 @@ function isCheckSelectionRequest(value: unknown): boolean {
   );
 }
 
+function isCancelPickerRequest(value: unknown): boolean {
+  return (
+    typeof value === "object" &&
+    value !== null &&
+    (value as { type?: unknown }).type === "trakdown:cancel-picker"
+  );
+}
+
 async function handleCapture(msg: CaptureRequest): Promise<CaptureResponse> {
+  // If a picker is still on-screen and the user picks a different mode from
+  // the popup, treat the new mode as the user's current intent: cancel the
+  // picker first so its overlay/banner clean up before the new capture runs.
+  if (msg.mode !== "element" && isPickerActive()) {
+    cancelPicker();
+  }
+
   if (msg.mode === "element") {
     if (isPickerActive()) {
       return { ok: false, error: "picker already active" };
