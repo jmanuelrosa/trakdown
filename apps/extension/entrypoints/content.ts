@@ -83,7 +83,7 @@ async function handleCapture(msg: CaptureRequest): Promise<CaptureResponse> {
 
   if (msg.mode === "page-ai") {
     void runAiCapture();
-    return { ok: true, pending: true, source: ExtractSource.AiClean };
+    return { ok: true, pending: true, source: ExtractSource.AI };
   }
 
   try {
@@ -155,7 +155,7 @@ async function runAiCapture(): Promise<void> {
       titleOverride: result.title,
     });
     await navigator.clipboard.writeText(markdown);
-    const tag = result.source === ExtractSource.AiClean ? "AI clean" : `${result.source} fallback`;
+    const tag = result.source === ExtractSource.AI ? "AI clean" : `${result.source} fallback`;
     showToast(`Copied ${markdown.length.toLocaleString()} chars (${tag})`);
   } catch (err) {
     console.warn("[trakdown] AI capture failed:", err);
