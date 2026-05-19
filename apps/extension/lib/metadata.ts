@@ -1,12 +1,11 @@
 // Page-level metadata extraction for markdown frontmatter.
 // Best-effort: every field is optional and falls back gracefully when meta tags
-// are missing. Reads from <meta>, <html lang>, <time> elements, and any
-// schema.org JSON-LD blocks present on the page.
+// are missing. Reads from <meta>, <html lang>, <time> elements, schema.org
+// JSON-LD blocks, and (for author) common body-level conventions.
 
 export interface PageMetadata {
   title?: string;
   language?: string;
-  description?: string;
   site?: string;
   author?: string;
   published?: string;
@@ -16,7 +15,6 @@ export function extractPageMetadata(doc: Document): PageMetadata {
   return {
     title: doc.title?.trim() || undefined,
     language: extractLanguage(doc),
-    description: extractDescription(doc),
     site: extractSite(doc),
     author: extractAuthor(doc),
     published: extractPublished(doc),
@@ -27,25 +25,93 @@ function extractLanguage(doc: Document): string | undefined {
   return doc.documentElement.getAttribute("lang")?.trim() || undefined;
 }
 
-function extractDescription(doc: Document): string | undefined {
-  const raw =
-    metaContent(doc, "description") ??
-    metaContent(doc, "og:description") ??
-    metaContent(doc, "twitter:description");
-  return raw?.trim() || undefined;
-}
-
 function extractSite(doc: Document): string | undefined {
   return metaContent(doc, "og:site_name")?.trim() || undefined;
 }
 
 function extractAuthor(doc: Document): string | undefined {
-  const fromMeta =
-    metaContent(doc, "author") ??
-    metaContent(doc, "article:author") ??
-    metaContent(doc, "twitter:creator");
-  if (fromMeta) return fromMeta.trim();
-  return extractJsonLdAuthor(doc);
+  // 1. <meta> tags — but skip URL-shaped values (e.g. <meta property="article:author"
+  // content="https://example.com/authors/jane">), which point at a profile rather
+  // than naming the author.
+  const fromMeta = firstUsableAuthor([
+    metaContent(doc, "author"),
+    metaContent(doc, "article:author"),
+    metaContent(doc, "twitter:creator"),
+    metaContent(doc, "dc.creator"),
+    metaContent(doc, "parsely-author"),
+  ]);
+  if (fromMeta) return fromMeta;
+
+  // 2. JSON-LD (schema.org) — walks the @graph and nested structures.
+  const fromJsonLd = extractJsonLdAuthor(doc);
+  if (fromJsonLd) return fromJsonLd;
+
+  // 3. Body-level conventions. Many news sites (e.g. xataka.com) only expose
+  // the author through visible byline markup, not <head> metadata.
+  return extractAuthorFromBody(doc);
+}
+
+function firstUsableAuthor(candidates: (string | null | undefined)[]): string | undefined {
+  for (const raw of candidates) {
+    const value = raw?.trim();
+    if (!value) continue;
+    if (isUrl(value)) continue;
+    if (value.length > 120) continue;
+    return value;
+  }
+  return undefined;
+}
+
+function isUrl(value: string): boolean {
+  return /^https?:\/\//i.test(value);
+}
+
+function extractAuthorFromBody(doc: Document): string | undefined {
+  // HTML spec: <a rel="author"> can appear anywhere — links to the author page.
+  // We take its visible text as the name.
+  const relAuthor = doc.querySelector<HTMLElement>("a[rel~='author']");
+  const relText = relAuthor?.textContent?.trim();
+  if (isPlausibleName(relText)) return relText;
+
+  // Schema.org microdata: [itemprop="author"]. Could be a <meta> with content,
+  // a wrapper with nested [itemprop="name"], or a span with the name as text.
+  const itemprop = doc.querySelector<HTMLElement>('[itemprop="author"]');
+  if (itemprop) {
+    const content = itemprop.getAttribute("content")?.trim();
+    if (isPlausibleName(content)) return content;
+
+    const nameEl = itemprop.querySelector<HTMLElement>('[itemprop="name"]');
+    const nameText = nameEl?.textContent?.trim();
+    if (isPlausibleName(nameText)) return nameText;
+
+    const text = itemprop.textContent?.trim();
+    if (isPlausibleName(text)) return text;
+  }
+
+  // Common semantic class names used by CMSes and news templates.
+  for (const selector of [
+    ".author-name",
+    ".byline-name",
+    ".post-author-name",
+    ".article-author",
+    ".author",
+    ".byline",
+  ]) {
+    const el = doc.querySelector<HTMLElement>(selector);
+    const text = el?.textContent?.trim().replace(/^by\s+/i, "");
+    if (isPlausibleName(text)) return text;
+  }
+
+  return undefined;
+}
+
+function isPlausibleName(value: string | null | undefined): value is string {
+  if (!value) return false;
+  if (value.length === 0 || value.length > 100) return false;
+  if (isUrl(value)) return false;
+  // Reject obvious non-names (newlines suggest we grabbed too much).
+  if (/[\n\r]/.test(value)) return false;
+  return true;
 }
 
 function extractPublished(doc: Document): string | undefined {
@@ -79,14 +145,27 @@ function metaContent(doc: Document, name: string): string | null {
 
 function extractJsonLdAuthor(doc: Document): string | undefined {
   return findJsonLdValue(doc, (obj) => {
-    const author = obj.author;
-    if (typeof author === "string") return author;
-    if (author && typeof author === "object" && "name" in author) {
-      const name = (author as Record<string, unknown>).name;
-      if (typeof name === "string") return name;
+    const author = obj.author ?? obj.creator;
+    return readAuthorValue(author);
+  });
+}
+
+function readAuthorValue(value: unknown): string | undefined {
+  if (typeof value === "string") {
+    return isUrl(value) ? undefined : value.trim() || undefined;
+  }
+  if (Array.isArray(value)) {
+    for (const item of value) {
+      const found = readAuthorValue(item);
+      if (found) return found;
     }
     return undefined;
-  });
+  }
+  if (value && typeof value === "object" && "name" in value) {
+    const name = (value as Record<string, unknown>).name;
+    if (typeof name === "string" && !isUrl(name)) return name.trim() || undefined;
+  }
+  return undefined;
 }
 
 function extractJsonLdPublished(doc: Document): string | undefined {
@@ -129,7 +208,6 @@ function walkJsonLd(
   const obj = data as Record<string, unknown>;
   const direct = finder(obj);
   if (direct) return direct;
-  // Look into @graph arrays (common in schema.org docs)
   if (Array.isArray(obj["@graph"])) {
     return walkJsonLd(obj["@graph"], finder);
   }

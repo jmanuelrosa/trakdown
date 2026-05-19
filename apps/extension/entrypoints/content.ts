@@ -1,12 +1,7 @@
-import {
-  type ExtractResult,
-  type ExtractSource,
-  extractMain,
-  extractMainWithAi,
-} from "@/lib/extract";
+import { type ExtractResult, extractMain, extractMainWithAi } from "@/lib/extract";
 import { buildFrontmatter, type FrontmatterMap } from "@/lib/frontmatter";
 import { htmlToMarkdown } from "@/lib/markdown";
-import type { CaptureMode, CaptureRequest, CaptureResponse } from "@/lib/messaging";
+import type { CaptureRequest, CaptureResponse } from "@/lib/messaging";
 import { extractPageMetadata } from "@/lib/metadata";
 import { activatePicker, isPickerActive, showToast } from "@/lib/picker";
 
@@ -51,8 +46,6 @@ async function handleCapture(msg: CaptureRequest): Promise<CaptureResponse> {
     }
     const markdown = buildMarkdown({
       body: htmlToMarkdown(captured.html),
-      mode: msg.mode,
-      extractor: captured.source,
       titleOverride: captured.title,
     });
     return { ok: true, markdown, source: captured.source };
@@ -91,8 +84,6 @@ async function runPicker(): Promise<void> {
   try {
     const markdown = buildMarkdown({
       body: htmlToMarkdown(result.element.outerHTML),
-      mode: "element",
-      extractor: "picker",
       selector: result.selector,
     });
     await navigator.clipboard.writeText(markdown);
@@ -111,8 +102,6 @@ async function runAiCapture(): Promise<void> {
     const result = await extractMainWithAi(document);
     const markdown = buildMarkdown({
       body: htmlToMarkdown(result.html),
-      mode: "page-ai",
-      extractor: result.source,
       titleOverride: result.title,
     });
     await navigator.clipboard.writeText(markdown);
@@ -128,8 +117,6 @@ async function runAiCapture(): Promise<void> {
 
 interface BuildMarkdownOpts {
   body: string;
-  mode: CaptureMode;
-  extractor: ExtractSource;
   titleOverride?: string;
   selector?: string;
 }
@@ -147,32 +134,17 @@ function buildMarkdown(opts: BuildMarkdownOpts): string {
     source: location.href,
     domain: url.hostname,
     captured_at: new Date().toISOString(),
-    capture_mode: opts.mode,
     site: meta.site,
     language: meta.language,
-    description: meta.description,
     author: meta.author,
     published: meta.published,
     word_count: wordCount || undefined,
     reading_time_min: readingTime,
     excerpt: makeExcerpt(opts.body),
     selector: opts.selector,
-    extractor: informativeExtractor(opts.mode, opts.extractor),
   };
 
   return buildFrontmatter(fm) + opts.body;
-}
-
-// Only emit `extractor` when its value adds information beyond the mode itself.
-// For "element" mode the extractor is always "picker"; for "selection" it's always
-// "selection" — both redundant. For "page" / "page-ai" the actual extraction path
-// (readability / ai-clean / fallback) is informative.
-function informativeExtractor(
-  mode: CaptureMode,
-  extractor: ExtractSource,
-): ExtractSource | undefined {
-  if (mode === "element" || mode === "selection") return undefined;
-  return extractor;
 }
 
 function countWords(markdown: string): number {
