@@ -165,7 +165,7 @@ async function runCapture(mode: CaptureMode): Promise<void> {
   }
 
   if (res?.pending) {
-    // Picker / AI clean are fire-and-forget from the popup's perspective.
+    // Picker / AI are fire-and-forget from the popup's perspective.
     // The on-page banner + the eventual toast from the content script carry
     // all the feedback. Closing the popup also keeps Chrome from eating the
     // user's first click on the page (popup-close consumed it before).

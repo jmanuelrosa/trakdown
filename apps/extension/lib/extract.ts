@@ -34,7 +34,7 @@ export function extractMain(doc: Document): ExtractResult {
       };
     }
   } catch (err) {
-    console.warn("[trakdown] readability extraction failed:", err);
+    console.warn("[trakdown] page extraction failed:", err);
   }
   return { html: doc.body.outerHTML, source: ExtractSource.Fallback };
 }

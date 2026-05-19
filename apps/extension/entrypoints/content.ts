@@ -147,7 +147,7 @@ async function runPicker(): Promise<void> {
 }
 
 async function runAiCapture(): Promise<void> {
-  showToast("AI cleaning page…");
+  showToast("AI capturing page…");
   try {
     const result = await extractMainWithAi(document);
     const markdown = buildMarkdown({
@@ -155,7 +155,7 @@ async function runAiCapture(): Promise<void> {
       titleOverride: result.title,
     });
     await navigator.clipboard.writeText(markdown);
-    const tag = result.source === ExtractSource.AI ? "AI clean" : `${result.source} fallback`;
+    const tag = result.source === ExtractSource.AI ? "AI" : `${result.source} fallback`;
     showToast(`Copied ${markdown.length.toLocaleString()} chars (${tag})`);
   } catch (err) {
     console.warn("[trakdown] AI capture failed:", err);

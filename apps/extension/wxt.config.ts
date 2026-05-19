@@ -35,7 +35,7 @@ export default defineConfig({
           default: "Ctrl+Shift+U",
           mac: "Command+Shift+U",
         },
-        description: "Capture the page with on-device AI cleanup (when available)",
+        description: "Capture the page with on-device AI (when available)",
       },
     },
   },
