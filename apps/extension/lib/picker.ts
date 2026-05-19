@@ -132,8 +132,8 @@ export function showToast(message: string, opts: { variant?: "success" | "error"
   requestAnimationFrame(() => toast.classList.add("show"));
   setTimeout(() => {
     toast.classList.remove("show");
-    setTimeout(() => toast.remove(), 250);
-  }, 2400);
+    setTimeout(() => toast.remove(), 280);
+  }, 3500);
 }
 
 function pickElementAt(x: number, y: number, ...exclude: Element[]): HTMLElement | null {
@@ -233,40 +233,36 @@ function injectStyle(): void {
 
     #${TOAST_ID} {
       position: fixed;
-      bottom: 20px;
-      right: 20px;
+      bottom: 24px;
+      right: 24px;
       z-index: ${Z_INDEX};
       pointer-events: none;
-      padding: 10px 16px;
-      border-radius: 8px;
+      padding: 14px 20px 14px 22px;
+      border-radius: 10px;
+      border-left: 4px solid rgb(15, 139, 126);
       background: rgb(42, 39, 34);
       color: rgb(251, 247, 238);
-      font: 13px/1.4 "JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace;
+      font: 14px/1.45 "JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace;
       letter-spacing: -0.005em;
-      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+      box-shadow:
+        0 14px 40px rgba(0, 0, 0, 0.32),
+        0 2px 6px rgba(0, 0, 0, 0.18);
+      max-width: min(420px, calc(100vw - 48px));
       opacity: 0;
-      transform: translateY(8px);
-      transition: opacity 200ms ease, transform 200ms ease;
-    }
-
-    #${TOAST_ID}::before {
-      content: "▍ ";
-      color: rgb(15, 139, 126);
-      font-weight: 700;
+      transform: translateY(20px) scale(0.96);
+      transition:
+        opacity 220ms ease,
+        transform 280ms cubic-bezier(0.34, 1.45, 0.64, 1);
     }
 
     #${TOAST_ID}.show {
       opacity: 1;
-      transform: translateY(0);
+      transform: translateY(0) scale(1);
     }
 
     #${TOAST_ID}[data-variant="error"] {
-      background: rgb(153, 27, 27);
-    }
-
-    #${TOAST_ID}[data-variant="error"]::before {
-      color: rgb(245, 245, 242);
-      content: "✕ ";
+      background: rgb(127, 26, 26);
+      border-left-color: rgb(248, 113, 113);
     }
   `;
   document.documentElement.appendChild(style);
