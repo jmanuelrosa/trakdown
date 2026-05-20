@@ -1,3 +1,4 @@
+import { getDestination } from "@/lib/destination";
 import type { CaptureMode, CaptureRequest } from "@/lib/messaging";
 
 // Map each declared command name (see wxt.config.ts) to a capture mode the
@@ -17,7 +18,8 @@ export default defineBackground(() => {
     const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
     if (!tab?.id) return;
 
-    const req: CaptureRequest = { type: "trakdown:capture", mode };
+    const destination = await getDestination();
+    const req: CaptureRequest = { type: "trakdown:capture", mode, destination };
     try {
       await chrome.tabs.sendMessage(tab.id, req);
     } catch (err) {
