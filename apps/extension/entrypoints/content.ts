@@ -137,7 +137,7 @@ async function runPicker(): Promise<void> {
       selector: result.selector,
     });
     await navigator.clipboard.writeText(markdown);
-    showToast(`Copied ${markdown.length.toLocaleString()} chars`);
+    showToast(`Copied ${markdown.length.toLocaleString()} chars (element picker)`);
   } catch (err) {
     console.warn("[trakdown] picker capture failed:", err);
     showToast(`Capture failed: ${err instanceof Error ? err.message : String(err)}`, {
