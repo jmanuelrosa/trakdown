@@ -1,15 +1,31 @@
-import { type ExtractResult, extractMain, extractMainWithAi } from "@/lib/extract";
+import { type ExtractResult, ExtractSource, extractMain, extractMainWithAi } from "@/lib/extract";
 import { buildFrontmatter, type FrontmatterMap } from "@/lib/frontmatter";
 import { htmlToMarkdown } from "@/lib/markdown";
 import type { CaptureRequest, CaptureResponse } from "@/lib/messaging";
 import { extractPageMetadata } from "@/lib/metadata";
-import { activatePicker, isPickerActive, showToast } from "@/lib/picker";
+import { activatePicker, cancelPicker, isPickerActive, showToast } from "@/lib/picker";
 
 export default defineContentScript({
   matches: ["<all_urls>"],
   runAt: "document_idle",
   main() {
     chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
+      if (isCheckSelectionRequest(msg)) {
+        const sel = window.getSelection();
+        const hasSelection = sel ? sel.toString().trim() !== "" : false;
+        sendResponse({ hasSelection });
+        return false;
+      }
+      if (isCancelPickerRequest(msg)) {
+        const cancelled = cancelPicker();
+        sendResponse({ cancelled });
+        return false;
+      }
+      if (isShowToastRequest(msg)) {
+        showToast(msg.message, { variant: msg.variant ?? "success" });
+        sendResponse({ shown: true });
+        return false;
+      }
       if (!isCaptureRequest(msg)) return;
       void handleCapture(msg).then(sendResponse);
       return true;
@@ -25,24 +41,58 @@ function isCaptureRequest(value: unknown): value is CaptureRequest {
   );
 }
 
+function isCheckSelectionRequest(value: unknown): boolean {
+  return (
+    typeof value === "object" &&
+    value !== null &&
+    (value as { type?: unknown }).type === "trakdown:check-selection"
+  );
+}
+
+function isCancelPickerRequest(value: unknown): boolean {
+  return (
+    typeof value === "object" &&
+    value !== null &&
+    (value as { type?: unknown }).type === "trakdown:cancel-picker"
+  );
+}
+
+function isShowToastRequest(
+  value: unknown,
+): value is { type: "trakdown:show-toast"; message: string; variant?: "success" | "error" } {
+  if (typeof value !== "object" || value === null) return false;
+  const v = value as { type?: unknown; message?: unknown };
+  return v.type === "trakdown:show-toast" && typeof v.message === "string";
+}
+
 async function handleCapture(msg: CaptureRequest): Promise<CaptureResponse> {
+  // If a picker is still on-screen and the user picks a different mode from
+  // the popup, treat the new mode as the user's current intent: cancel the
+  // picker first so its overlay/banner clean up before the new capture runs.
+  if (msg.mode !== "element" && isPickerActive()) {
+    cancelPicker();
+  }
+
   if (msg.mode === "element") {
     if (isPickerActive()) {
       return { ok: false, error: "picker already active" };
     }
     void runPicker();
-    return { ok: true, pending: true, source: "picker" };
+    return { ok: true, pending: true, source: ExtractSource.Picker };
   }
 
   if (msg.mode === "page-ai") {
     void runAiCapture();
-    return { ok: true, pending: true, source: "ai-clean" };
+    return { ok: true, pending: true, source: ExtractSource.AI };
   }
 
   try {
     const captured = capture(msg.mode);
     if (!captured) {
-      return { ok: false, error: `mode "${msg.mode}" not yet implemented` };
+      if (msg.mode === "selection") {
+        return { ok: false, error: "no text selected on the page" };
+      }
+      return { ok: false, error: `unsupported mode "${msg.mode}"` };
     }
     const markdown = buildMarkdown({
       body: htmlToMarkdown(captured.html),
@@ -74,7 +124,7 @@ function captureSelection(): ExtractResult | null {
   for (let i = 0; i < sel.rangeCount; i++) {
     container.appendChild(sel.getRangeAt(i).cloneContents());
   }
-  return { html: container.innerHTML, source: "selection" };
+  return { html: container.innerHTML, source: ExtractSource.Selection };
 }
 
 async function runPicker(): Promise<void> {
@@ -87,7 +137,7 @@ async function runPicker(): Promise<void> {
       selector: result.selector,
     });
     await navigator.clipboard.writeText(markdown);
-    showToast(`Copied ${markdown.length.toLocaleString()} chars`);
+    showToast(`Copied ${markdown.length.toLocaleString()} chars (element picker)`);
   } catch (err) {
     console.warn("[trakdown] picker capture failed:", err);
     showToast(`Capture failed: ${err instanceof Error ? err.message : String(err)}`, {
@@ -97,7 +147,7 @@ async function runPicker(): Promise<void> {
 }
 
 async function runAiCapture(): Promise<void> {
-  showToast("AI cleaning page…");
+  showToast("AI capturing page…");
   try {
     const result = await extractMainWithAi(document);
     const markdown = buildMarkdown({
@@ -105,7 +155,7 @@ async function runAiCapture(): Promise<void> {
       titleOverride: result.title,
     });
     await navigator.clipboard.writeText(markdown);
-    const tag = result.source === "ai-clean" ? "AI clean" : `${result.source} fallback`;
+    const tag = result.source === ExtractSource.AI ? "AI" : `${result.source} fallback`;
     showToast(`Copied ${markdown.length.toLocaleString()} chars (${tag})`);
   } catch (err) {
     console.warn("[trakdown] AI capture failed:", err);
