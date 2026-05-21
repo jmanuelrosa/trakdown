@@ -23,9 +23,5 @@
     "node": ">=22",
     "pnpm": ">=11"
   },
-  "packageManager": "pnpm@11.1.2",
-  "workspaces": [
-    "apps/*",
-    "packages/*"
-  ]
+  "packageManager": "pnpm@11.1.2"
 }
