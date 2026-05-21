@@ -1,12 +1,15 @@
 ---
-// Placeholder for the picker demo. Replace with a real video / GIF asset before launch.
-// Asset spec: 5–10 second loop showing picker on a generic auth'd dashboard → markdown → AI paste.
+// CSS-only demo of the capture flow: cursor → click → picked overlay → toast.
+// The DOM mirrors the actual extension UI (banner, picker overlay, toast); the
+// final keyframe of the animation matches the static default, so the section
+// reads correctly with no JS, with `prefers-reduced-motion: reduce`, or before
+// the IntersectionObserver fires.
 ---
 
 <section id="demo" class="px-6 pb-20 sm:pb-28" data-section="demo">
   <div class="prose-column">
     <figure>
-      <div class="frame">
+      <div class="frame" data-demo-frame>
         <div class="frame__chrome" aria-hidden="true">
           <span class="frame__dot" style="background:#FF5F57"></span>
           <span class="frame__dot" style="background:#FEBC2E"></span>
@@ -26,12 +29,15 @@
             <div class="page__nav">Users · Teams · Billing · Settings</div>
             <h3 class="page__heading">Inactive users</h3>
             <div class="page__table" aria-label="picked element">
+              <span class="page__pick" aria-hidden="true"></span>
+              <span class="page__pick-badge" aria-hidden="true">picked</span>
               <div class="page__row page__row--header">
                 <span>NAME</span><span>EMAIL</span><span>LAST&nbsp;SEEN</span>
               </div>
               <div class="page__row"><span>Sarah Chen</span><span>sarah@acme.io</span><span>47 days ago</span></div>
               <div class="page__row"><span>Marcus West</span><span>marcus@acme.io</span><span>91 days ago</span></div>
               <div class="page__row"><span>Priya Shah</span><span>priya@acme.io</span><span>124 days ago</span></div>
+              <span class="page__cursor" aria-hidden="true"></span>
             </div>
             <p class="page__foot">Support · Docs · Status</p>
           </div>
@@ -42,13 +48,55 @@
         </div>
       </div>
 
-      <figcaption class="small mt-4">
-        Hover, click, paste. Picker captures the table — nothing else.
-        <span class="text-(--color-brand-deep) ml-2">[demo asset placeholder]</span>
+      <figcaption class="demo__caption">
+        <p class="small">Hover, click, paste. Picker captures the table — nothing else.</p>
+        <button type="button" class="demo__replay" data-demo-replay aria-label="Replay demo">
+          <span aria-hidden="true">▍</span>&nbsp;Replay
+        </button>
       </figcaption>
     </figure>
   </div>
 </section>
+
+<script>
+  // Hold the play state on the frame so the keyframes know when to fire. The
+  // observer only ever flips it on, once — re-entering the section doesn't
+  // restart the animation (would feel jumpy on scrub). Use the replay button
+  // for explicit re-runs.
+  const fig = document.querySelector<HTMLElement>("[data-demo-frame]");
+  if (fig) {
+    // Flagging the frame as "playable" the moment JS runs hides the picked
+    // overlay + toast via CSS — otherwise the animation's 0% keyframe (opacity 0)
+    // would make them blink off the moment the user scrolls in, then back on.
+    fig.setAttribute("data-playable", "true");
+    if ("IntersectionObserver" in window) {
+      let started = false;
+      const io = new IntersectionObserver(
+        (entries) => {
+          for (const e of entries) {
+            if (e.isIntersecting && !started) {
+              started = true;
+              fig.setAttribute("data-playing", "true");
+              io.disconnect();
+            }
+          }
+        },
+        { threshold: 0.4 },
+      );
+      io.observe(fig);
+    } else {
+      fig.setAttribute("data-playing", "true");
+    }
+
+    const replay = document.querySelector<HTMLButtonElement>("[data-demo-replay]");
+    replay?.addEventListener("click", () => {
+      fig.removeAttribute("data-playing");
+      // Force a reflow so the keyframes restart cleanly on re-application.
+      void fig.offsetWidth;
+      fig.setAttribute("data-playing", "true");
+    });
+  }
+</script>
 
 <style>
   .frame {
@@ -149,14 +197,23 @@
 
   .page__table {
     position: relative;
-    border: 2px solid var(--color-brand);
-    background: color-mix(in oklch, var(--color-brand) 10%, transparent);
-    border-radius: 4px;
     padding: 0.6rem 0.8rem;
   }
 
-  .page__table::after {
-    content: "picked";
+  /* Picked overlay — split from the table itself so we can animate it via
+     opacity only. Default state is "visible" so the static composition (no JS,
+     no scroll-in, reduced motion) reads as the final captured state. */
+  .page__pick {
+    position: absolute;
+    inset: 0;
+    border: 2px solid var(--color-brand);
+    background: color-mix(in oklch, var(--color-brand) 10%, transparent);
+    border-radius: 4px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .page__pick-badge {
     position: absolute;
     top: -10px;
     right: 12px;
@@ -168,9 +225,12 @@
     padding: 1px 6px;
     border-radius: 3px;
     letter-spacing: 0.02em;
+    z-index: 1;
   }
 
   .page__row {
+    position: relative;
+    z-index: 1;
     display: grid;
     grid-template-columns: 1.4fr 1.6fr 1.1fr;
     gap: 0.6rem;
@@ -192,6 +252,24 @@
     color: var(--color-muted);
   }
 
+  /* Brand cursor mark — the same ▍ shape used in the wordmark/toast/banner.
+     Lives inside the table so its positioning is independent of frame-body
+     layout. Default hidden; only fades in when the animation runs. */
+  .page__cursor {
+    position: absolute;
+    top: 52%;
+    left: 78%;
+    width: 5px;
+    height: 18px;
+    background: var(--color-brand);
+    border-radius: 1px;
+    transform: translate(180px, -50%);
+    opacity: 0;
+    z-index: 2;
+    pointer-events: none;
+    box-shadow: 0 0 0 1px color-mix(in oklch, var(--color-brand) 35%, transparent);
+  }
+
   .toast {
     position: absolute;
     bottom: 14px;
@@ -209,5 +287,155 @@
   .toast__bar {
     color: var(--color-brand);
     font-weight: 700;
+  }
+
+  /* Replay button — quiet ghost styling, sits next to the figcaption text.
+     Hides until JS has wired up the animation (no point offering replay on
+     a page that never played). */
+  .demo__caption {
+    margin-top: 1rem;
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 1rem;
+    flex-wrap: wrap;
+  }
+
+  .demo__replay {
+    display: none;
+    align-items: center;
+    gap: 0.3rem;
+    font-family: var(--font-mono);
+    font-size: 0.74rem;
+    font-weight: 500;
+    color: var(--color-fg-muted);
+    background: transparent;
+    border: 1px solid var(--color-rule);
+    border-radius: 4px;
+    padding: 0.25rem 0.55rem;
+    cursor: pointer;
+    transition: color 160ms ease, border-color 160ms ease;
+  }
+
+  .demo__replay:hover {
+    color: var(--color-brand-deep);
+    border-color: var(--color-fg-muted);
+  }
+
+  .demo__replay :first-child {
+    color: var(--color-brand);
+    font-weight: 700;
+  }
+
+  .frame[data-playable] + .demo__caption .demo__replay {
+    display: inline-flex;
+  }
+
+  /* Animation — runs once when [data-playing] flips on (set by the
+     IntersectionObserver, or by the Replay button). Each element gets its own
+     keyframes; total duration ~1.6s, then settles on the captured state via
+     animation-fill-mode: forwards.
+
+     Default CSS state shows the captured composition so JS-disabled and
+     prefers-reduced-motion users see the same picture they'd see at the end
+     of the animation. When JS runs, it sets [data-playable] on the frame —
+     that hides the captured state so the animation has somewhere to animate
+     from. */
+
+  .frame[data-playable] .page__pick,
+  .frame[data-playable] .page__pick-badge {
+    opacity: 0;
+  }
+
+  .frame[data-playable] .toast {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+
+  /* When the animation is in flight, start each element from its "before" state
+     and animate forward. fill-mode: forwards holds the final frame. */
+  .frame[data-playing] .page__cursor {
+    animation: demo-cursor 1.6s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  }
+
+  .frame[data-playing] .page__pick {
+    animation: demo-pick 1.6s ease-out forwards;
+  }
+
+  .frame[data-playing] .page__pick-badge {
+    animation: demo-pick 1.6s ease-out forwards;
+    animation-delay: 60ms;
+  }
+
+  .frame[data-playing] .toast {
+    animation: demo-toast 1.6s cubic-bezier(0.34, 1.45, 0.64, 1) forwards;
+  }
+
+  @keyframes demo-cursor {
+    0% {
+      opacity: 0;
+      transform: translate(180px, -50%);
+    }
+    18% {
+      opacity: 1;
+      transform: translate(180px, -50%);
+    }
+    55% {
+      opacity: 1;
+      transform: translate(0, -50%);
+    }
+    62% {
+      opacity: 1;
+      transform: translate(0, -50%) scaleY(0.55);
+    }
+    72% {
+      opacity: 1;
+      transform: translate(0, -50%) scaleY(1);
+    }
+    100% {
+      opacity: 0;
+      transform: translate(0, -50%);
+    }
+  }
+
+  @keyframes demo-pick {
+    0%,
+    55% {
+      opacity: 0;
+    }
+    72%,
+    100% {
+      opacity: 1;
+    }
+  }
+
+  @keyframes demo-toast {
+    0%,
+    72% {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+    100% {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  /* Reduced-motion users skip the animation entirely. The Tier-1 catchall
+     would already collapse the animation to 0.01ms, but it relies on the IO
+     to have fired and set [data-playing]. Belt-and-braces: when motion is
+     reduced, always show the captured state regardless of [data-playable]. */
+  @media (prefers-reduced-motion: reduce) {
+    .frame[data-playable] .page__pick,
+    .frame[data-playable] .page__pick-badge {
+      opacity: 1;
+    }
+    .frame[data-playable] .toast {
+      opacity: 1;
+      transform: translateY(0);
+    }
+    .frame[data-playable] .page__cursor {
+      display: none;
+    }
   }
 </style>

@@ -26,7 +26,7 @@ const columns = ["trakdown", "Obsidian Web Clipper", "MarkDownload", "Defuddle C
           <tr class="border-b border-(--color-rule)">
             <th class="py-3 pr-6 font-(family-name:--font-mono) text-xs uppercase tracking-wider text-(--color-muted) font-medium"></th>
             {columns.map((col, i) => (
-              <th class={`py-3 px-4 text-sm font-medium ${i === 0 ? "text-(--color-brand-deep)" : "text-(--color-ink-soft)"}`}>
+              <th class={`py-3 px-4 text-sm font-medium ${i === 0 ? "text-(--color-brand-deep)" : "text-(--color-fg-muted)"}`}>
                 {col}
               </th>
             ))}
@@ -37,7 +37,7 @@ const columns = ["trakdown", "Obsidian Web Clipper", "MarkDownload", "Defuddle C
             <tr class="border-b border-(--color-rule)/60">
               <td class="py-3 pr-6 body-text text-sm">{row.feature}</td>
               {row.values.map((v, i) => (
-                <td class={`py-3 px-4 font-(family-name:--font-mono) text-sm ${i === 0 ? "text-(--color-brand-deep)" : "text-(--color-ink-soft)"}`}>
+                <td class={`py-3 px-4 font-(family-name:--font-mono) text-sm ${i === 0 ? "text-(--color-brand-deep)" : "text-(--color-fg-muted)"}`}>
                   {v ? "✓" : "—"}
                 </td>
               ))}
