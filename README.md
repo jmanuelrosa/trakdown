@@ -54,7 +54,8 @@ Privacy-friendly visit and event tracking via Umami — see [`docs/analytics.md`
 This repo's `.npmrc` enforces strict install defaults:
 
 - `ignore-scripts=true` — package install scripts (`postinstall`, etc.) are **blocked by default**. Allow specific packages via `allowBuilds:` in [`pnpm-workspace.yaml`](pnpm-workspace.yaml) (currently: `esbuild`, `sharp`, `spawn-sync`)
-- `minimum-release-age=1440` — only install packages published ≥24 hours ago (mitigates fast-moving supply-chain attacks)
+- `min-release-age=3` (days) — only install packages published ≥72 hours ago (mitigates fast-moving supply-chain attacks). Mirrored as `minimumReleaseAge: 4320` (minutes) in [`pnpm-workspace.yaml`](pnpm-workspace.yaml)
+- `block-exotic-subdeps=true` — refuse transitive deps from non-registry sources (git, tarballs, `file:`); also enforced via `blockExoticSubdeps: true` in [`pnpm-workspace.yaml`](pnpm-workspace.yaml)
 - `save-exact=true` — no caret ranges in `package.json`
 - `trust-policy=no-downgrade` — refuse to install older versions
 - `node-options="--permission"` — Node's permission model enabled during install

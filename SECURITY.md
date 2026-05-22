@@ -59,15 +59,17 @@ For context when evaluating attack surface:
 
 ## Supply-chain controls already in place
 
-trakdown's [`.npmrc`](.npmrc) enforces strict install-time defaults to limit supply-chain attack surface:
+trakdown's [`.npmrc`](.npmrc) and [`pnpm-workspace.yaml`](pnpm-workspace.yaml) enforce strict install-time defaults to limit supply-chain attack surface:
 
 - `ignore-scripts=true` — package install scripts blocked by default; per-package opt-in via `allowBuilds:` in [`pnpm-workspace.yaml`](pnpm-workspace.yaml)
-- `minimum-release-age=1440` — packages must be ≥24h old before they install (mitigates fast-moving package compromises)
+- `min-release-age=3` (days) — packages must be ≥72h old before they install (mitigates fast-moving package compromises); mirrored as `minimumReleaseAge: 4320` (minutes) in [`pnpm-workspace.yaml`](pnpm-workspace.yaml)
 - `save-exact=true` and `trust-policy=no-downgrade` — pinned, monotonic versions
-- `block-exotic-subdeps=true` — refuses dependencies in unusual tree positions
+- `block-exotic-subdeps=true` — refuses transitive dependencies from non-registry sources (git, tarballs, `file:`)
+- `node-options="--permission"` — Node's permission model is enabled during install
 
 In addition:
 
+- **[Socket](https://socket.dev/)** monitors every pull request that touches `package.json` / `pnpm-lock.yaml`, flagging newly-introduced packages with risky behavior (install scripts, network access, obfuscated code, typosquats, suspicious maintainer changes) directly on the PR before merge
 - **GitLeaks** + **Bearer** scans run on every PR via [`.github/workflows/pull_request.yml`](.github/workflows/pull_request.yml)
 - **Dependabot Alerts** surface upstream advisories ([`.github/dependabot.yml`](.github/dependabot.yml) runs in security-alerts-only mode)
 

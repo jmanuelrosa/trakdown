@@ -107,19 +107,22 @@ Full spec: `docs/marketing/brand.md`.
 - Lime on dark surface (read as "black-and-white hacker")
 - FOSSA-centric copy framing (broadened to "the dashboards behind your login")
 
-## Supply-chain hardening (`.npmrc`)
+## Supply-chain hardening (`.npmrc` + `pnpm-workspace.yaml`)
 
-The repo's `.npmrc` enforces strict pnpm defaults — be aware before adding deps:
+Strict pnpm defaults are split across two files — be aware before adding deps:
 
-- `ignore-scripts=true` — install scripts (`postinstall`, `preinstall`, etc.) are **blocked by default**. To allow a specific package, add it to `allowBuilds:` in `pnpm-workspace.yaml`. Currently allowed: `esbuild`, `sharp`, `spawn-sync`.
-- `minimum-release-age=1440` — packages must be ≥24h old before they install. Mitigates fast-moving supply-chain attacks; means a freshly published version can't be installed for a day.
-- `save-exact=true` — `package.json` entries are pinned exactly (no `^` or `~`).
-- `trust-policy=no-downgrade` — pnpm refuses to install older versions over newer ones.
-- `node-options="--permission"` — Node's permission model is enabled during install.
+- `ignore-scripts=true` (`.npmrc`) — install scripts (`postinstall`, `preinstall`, etc.) are **blocked by default**. To allow a specific package, add it to `allowBuilds:` in `pnpm-workspace.yaml`. Currently allowed: `esbuild`, `sharp`, `spawn-sync`.
+- `min-release-age=3` (`.npmrc`, days) — packages must be ≥72h old before they install. Mitigates fast-moving supply-chain attacks; means a freshly published version can't be installed for three days. Mirrored in `pnpm-workspace.yaml` as `minimumReleaseAge: 4320` (minutes) — keep both in sync if you change one.
+- `block-exotic-subdeps=true` (`.npmrc`) — pnpm refuses transitive deps from non-registry sources (git, tarballs, `file:`). Also enforced in `pnpm-workspace.yaml` as `blockExoticSubdeps: true`.
+- `save-exact=true` (`.npmrc`) — `package.json` entries are pinned exactly (no `^` or `~`).
+- `trust-policy=no-downgrade` (`.npmrc`) + `trustPolicy: no-downgrade` (`pnpm-workspace.yaml`) — pnpm refuses to install older versions over newer ones.
+- `node-options="--permission"` (`.npmrc`) — Node's permission model is enabled during install.
+- `store-dir=.pnpm-store` (`.npmrc`) — project-local pnpm store (sandbox workaround; see "Sandbox / agent caveats").
+- `dangerouslyAllowAllBuilds: false` (`pnpm-workspace.yaml`) — belt-and-braces guard against accidentally re-enabling install scripts globally.
 
 When proposing a new dep:
-1. Check if it has install scripts (native bindings, `esbuild`, `sharp`, etc.). If yes, add to `allowBuilds:`.
-2. The version installed will be the latest one published ≥24h ago.
+1. Check if it has install scripts (native bindings, `esbuild`, `sharp`, etc.). If yes, add to `allowBuilds:` in `pnpm-workspace.yaml`.
+2. The version installed will be the latest one published ≥72h ago.
 
 ## Sandbox / agent caveats specific to this repo
 
