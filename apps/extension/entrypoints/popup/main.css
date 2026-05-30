@@ -75,6 +75,52 @@ main {
   padding: 14px 16px 16px;
 }
 
+/* Destination toggle — Copy / Save .md. Sticky setting, persisted in
+   chrome.storage.local. Visually a single pill with two halves; the active
+   half is teal. */
+.dest {
+  display: flex;
+  margin: 0 0 12px;
+  padding: 2px;
+  background: color-mix(in oklab, var(--brand) 8%, var(--surface));
+  border: 1px solid color-mix(in oklab, var(--brand) 22%, transparent);
+  border-radius: 7px;
+  gap: 2px;
+}
+
+.dest-opt {
+  appearance: none;
+  flex: 1;
+  font-family: var(--mono);
+  font-weight: 500;
+  font-size: 12px;
+  letter-spacing: -0.005em;
+  padding: 6px 10px;
+  border: 0;
+  border-radius: 5px;
+  background: transparent;
+  color: var(--fg-muted);
+  cursor: pointer;
+  transition:
+    background-color 120ms ease,
+    color 120ms ease;
+}
+
+.dest-opt:hover:not(.is-active) {
+  color: var(--fg);
+  background: color-mix(in oklab, var(--brand) 6%, transparent);
+}
+
+.dest-opt.is-active {
+  background: var(--brand);
+  color: var(--on-brand);
+}
+
+.dest-opt:focus-visible {
+  outline: 2px solid var(--brand);
+  outline-offset: 2px;
+}
+
 /* Button stack */
 .actions {
   display: flex;
