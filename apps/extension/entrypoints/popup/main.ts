@@ -1,10 +1,16 @@
 import { type AiAvailability, aiAvailability } from "@/lib/ai-extract";
+import { type Destination, getDestination, setDestination } from "@/lib/destination";
 import type { CaptureMode, CaptureRequest, CaptureResponse } from "@/lib/messaging";
 
 const statusEl = document.getElementById("status") as HTMLParagraphElement;
 const aiButton = document.querySelector<HTMLButtonElement>('button[data-mode="page-ai"]');
 const selectionButton = document.querySelector<HTMLButtonElement>('button[data-mode="selection"]');
+const destToggle = document.querySelector<HTMLElement>(".dest");
 
+// The popup is a pure dispatcher: read the user's destination preference, send
+// the capture request, close. All clipboard writes / downloads / toasts happen
+// in the content script — keeps popup and keyboard-shortcut paths identical.
+let destination: Destination = "clipboard";
 let busyButton: HTMLButtonElement | null = null;
 
 document.querySelectorAll<HTMLButtonElement>("button[data-mode]").forEach((btn) => {
@@ -41,9 +47,34 @@ async function cancelPickerOnActiveTab(): Promise<boolean> {
   }
 }
 
+void initDestination();
 void initAi();
 void populateShortcuts();
 void initSelectionAvailability();
+
+async function initDestination(): Promise<void> {
+  destination = await getDestination();
+  applyDestinationUi(destination);
+  if (!destToggle) return;
+  destToggle.querySelectorAll<HTMLButtonElement>("[data-dest]").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const next = btn.dataset.dest as Destination | undefined;
+      if (!next || next === destination) return;
+      destination = next;
+      applyDestinationUi(destination);
+      void setDestination(destination);
+    });
+  });
+}
+
+function applyDestinationUi(value: Destination): void {
+  if (!destToggle) return;
+  destToggle.querySelectorAll<HTMLButtonElement>("[data-dest]").forEach((btn) => {
+    const isActive = btn.dataset.dest === value;
+    btn.classList.toggle("is-active", isActive);
+    btn.setAttribute("aria-pressed", String(isActive));
+  });
+}
 
 async function initAi(): Promise<void> {
   if (!aiButton) return;
@@ -147,15 +178,15 @@ async function runCapture(mode: CaptureMode): Promise<void> {
     return;
   }
 
-  const req: CaptureRequest = { type: "trakdown:capture", mode };
+  const req: CaptureRequest = { type: "trakdown:capture", mode, destination };
 
   let res: CaptureResponse | undefined;
   try {
     res = await chrome.tabs.sendMessage<CaptureRequest, CaptureResponse>(tab.id, req);
   } catch (err) {
-    // Page unreachable (chrome:// URL, extension just installed, etc.) — can't
-    // surface this via an on-page toast. Keep the popup open with the inline
-    // status instead so the user has somewhere to read the error.
+    // Page unreachable (chrome:// URL, extension just installed, etc.) — the
+    // content script isn't there to render a toast, so keep the popup open
+    // with the inline status as the only place the user can read the error.
     setStatus(
       `Can't reach this page. Reload the tab and try again. (${
         err instanceof Error ? err.message : String(err)
@@ -164,52 +195,16 @@ async function runCapture(mode: CaptureMode): Promise<void> {
     return;
   }
 
-  if (res?.pending) {
-    // Picker / AI are fire-and-forget from the popup's perspective.
-    // The on-page banner + the eventual toast from the content script carry
-    // all the feedback. Closing the popup also keeps Chrome from eating the
-    // user's first click on the page (popup-close consumed it before).
+  if (res?.ok) {
+    // Either pending (picker/AI) or synchronously delivered (page/selection).
+    // Either way the content script has the toast covered — popup just closes.
     window.close();
     return;
   }
 
-  if (res?.ok && res.markdown) {
-    const markdown = res.markdown;
-    try {
-      // Clipboard write runs in the popup (which has the click gesture).
-      await navigator.clipboard.writeText(markdown);
-      const sourceTag = res.source ? ` (${res.source})` : "";
-      void showPageToast(tab.id, `Copied ${markdown.length.toLocaleString()} chars${sourceTag}`);
-    } catch (err) {
-      void showPageToast(
-        tab.id,
-        `Captured but couldn't write to clipboard: ${
-          err instanceof Error ? err.message : String(err)
-        }`,
-        "error",
-      );
-    }
-    window.close();
-    return;
-  }
-
-  // Synchronous error — toast the result on the page and close.
-  const message =
-    mode === "selection" && (/no text selected/i.test(res?.error ?? "") || !res?.error)
-      ? "Select text on the page first, then try again."
-      : `Capture failed: ${res?.error ?? "no response"}`;
-  void showPageToast(tab.id, message, "error");
+  // Errors that originated in the content script (e.g. selection with no text)
+  // were already toasted on the page; the popup is redundant, just close.
   window.close();
-}
-
-function showPageToast(
-  tabId: number,
-  message: string,
-  variant: "success" | "error" = "success",
-): Promise<unknown> {
-  return chrome.tabs
-    .sendMessage(tabId, { type: "trakdown:show-toast", message, variant })
-    .catch(() => undefined);
 }
 
 function setStatus(msg: string): void {

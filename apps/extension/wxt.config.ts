@@ -4,7 +4,7 @@ export default defineConfig({
   manifest: {
     name: "trakdown",
     description: "Capture web pages and DOM regions as markdown for AI consumption",
-    permissions: ["activeTab", "clipboardWrite"],
+    permissions: ["activeTab", "clipboardWrite", "storage"],
     // Four user-configurable shortcuts — one per capture mode. Chrome lets
     // users rebind each at chrome://extensions/shortcuts if the suggested
     // default conflicts with another extension or OS shortcut.

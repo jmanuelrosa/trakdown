@@ -1,3 +1,5 @@
+import { Destination } from "@/lib/destination";
+import { buildFilename, triggerDownload } from "@/lib/download";
 import { type ExtractResult, ExtractSource, extractMain, extractMainWithAi } from "@/lib/extract";
 import { buildFrontmatter, type FrontmatterMap } from "@/lib/frontmatter";
 import { htmlToMarkdown } from "@/lib/markdown";
@@ -77,12 +79,12 @@ async function handleCapture(msg: CaptureRequest): Promise<CaptureResponse> {
     if (isPickerActive()) {
       return { ok: false, error: "picker already active" };
     }
-    void runPicker();
+    void runPicker(msg.destination);
     return { ok: true, pending: true, source: ExtractSource.Picker };
   }
 
   if (msg.mode === "page-ai") {
-    void runAiCapture();
+    void runAiCapture(msg.destination);
     return { ok: true, pending: true, source: ExtractSource.AI };
   }
 
@@ -90,6 +92,7 @@ async function handleCapture(msg: CaptureRequest): Promise<CaptureResponse> {
     const captured = capture(msg.mode);
     if (!captured) {
       if (msg.mode === "selection") {
+        showToast("Select text on the page first, then try again.", { variant: "error" });
         return { ok: false, error: "no text selected on the page" };
       }
       return { ok: false, error: `unsupported mode "${msg.mode}"` };
@@ -98,9 +101,12 @@ async function handleCapture(msg: CaptureRequest): Promise<CaptureResponse> {
       body: htmlToMarkdown(captured.html),
       titleOverride: captured.title,
     });
-    return { ok: true, markdown, source: captured.source };
+    await deliver(markdown, msg.destination, sourceTag(captured.source), captured.title);
+    return { ok: true, source: captured.source };
   } catch (err) {
-    return { ok: false, error: err instanceof Error ? err.message : String(err) };
+    const message = err instanceof Error ? err.message : String(err);
+    showToast(`Capture failed: ${message}`, { variant: "error" });
+    return { ok: false, error: message };
   }
 }
 
@@ -127,7 +133,7 @@ function captureSelection(): ExtractResult | null {
   return { html: container.innerHTML, source: ExtractSource.Selection };
 }
 
-async function runPicker(): Promise<void> {
+async function runPicker(destination: Destination): Promise<void> {
   const result = await activatePicker();
   if (!result) return;
 
@@ -136,8 +142,7 @@ async function runPicker(): Promise<void> {
       body: htmlToMarkdown(result.element.outerHTML),
       selector: result.selector,
     });
-    await navigator.clipboard.writeText(markdown);
-    showToast(`Copied ${markdown.length.toLocaleString()} chars (element picker)`);
+    await deliver(markdown, destination, "element picker");
   } catch (err) {
     console.warn("[trakdown] picker capture failed:", err);
     showToast(`Capture failed: ${err instanceof Error ? err.message : String(err)}`, {
@@ -146,7 +151,7 @@ async function runPicker(): Promise<void> {
   }
 }
 
-async function runAiCapture(): Promise<void> {
+async function runAiCapture(destination: Destination): Promise<void> {
   showToast("AI capturing page…");
   try {
     const result = await extractMainWithAi(document);
@@ -154,15 +159,42 @@ async function runAiCapture(): Promise<void> {
       body: htmlToMarkdown(result.html),
       titleOverride: result.title,
     });
-    await navigator.clipboard.writeText(markdown);
     const tag = result.source === ExtractSource.AI ? "AI" : `${result.source} fallback`;
-    showToast(`Copied ${markdown.length.toLocaleString()} chars (${tag})`);
+    await deliver(markdown, destination, tag, result.title);
   } catch (err) {
     console.warn("[trakdown] AI capture failed:", err);
     showToast(`AI capture failed: ${err instanceof Error ? err.message : String(err)}`, {
       variant: "error",
     });
   }
+}
+
+// Routes the captured markdown to whichever destination the user picked and
+// surfaces the result via the on-page toast. The toast wording diverges
+// (Copied N chars vs Saved <filename>) so the user can tell at a glance which
+// destination just ran — useful when the toggle was left on the other one.
+async function deliver(
+  markdown: string,
+  destination: Destination,
+  tag: string,
+  titleOverride?: string,
+): Promise<void> {
+  if (destination === Destination.Download) {
+    const filename = buildFilename({
+      title: titleOverride ?? document.title,
+      url: location.href,
+    });
+    triggerDownload(markdown, filename);
+    showToast(`Saved ${filename} (${tag})`);
+    return;
+  }
+  await navigator.clipboard.writeText(markdown);
+  showToast(`Copied ${markdown.length.toLocaleString()} chars (${tag})`);
+}
+
+function sourceTag(source: ExtractSource): string {
+  if (source === ExtractSource.AI) return "AI";
+  return source;
 }
 
 interface BuildMarkdownOpts {

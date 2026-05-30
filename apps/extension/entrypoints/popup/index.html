@@ -18,6 +18,19 @@
       <span class="version">v0.0.1</span>
     </header>
     <main>
+      <div class="dest" role="group" aria-label="Capture destination">
+        <button
+          type="button"
+          class="dest-opt is-active"
+          data-dest="clipboard"
+          aria-pressed="true"
+        >
+          Copy
+        </button>
+        <button type="button" class="dest-opt" data-dest="download" aria-pressed="false">
+          Save .md
+        </button>
+      </div>
       <div class="actions">
         <button
           id="capture-element"
