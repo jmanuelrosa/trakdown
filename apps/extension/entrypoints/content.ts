@@ -88,25 +88,33 @@ async function handleCapture(msg: CaptureRequest): Promise<CaptureResponse> {
     return { ok: true, pending: true, source: ExtractSource.AI };
   }
 
-  try {
-    const captured = capture(msg.mode);
-    if (!captured) {
-      if (msg.mode === "selection") {
-        showToast("Select text on the page first, then try again.", { variant: "error" });
-        return { ok: false, error: "no text selected on the page" };
-      }
-      return { ok: false, error: `unsupported mode "${msg.mode}"` };
+  // Validate sync modes eagerly so "no selection" toasts before the popup
+  // closes. Delivery is deferred so navigator.clipboard.writeText runs with
+  // the page focused — see waitForFocus inside deliver().
+  const captured = capture(msg.mode);
+  if (!captured) {
+    if (msg.mode === "selection") {
+      showToast("Select text on the page first, then try again.", { variant: "error" });
+      return { ok: false, error: "no text selected on the page" };
     }
+    return { ok: false, error: `unsupported mode "${msg.mode}"` };
+  }
+  void runSyncCapture(captured, msg.destination);
+  return { ok: true, pending: true, source: captured.source };
+}
+
+async function runSyncCapture(captured: ExtractResult, destination: Destination): Promise<void> {
+  try {
     const markdown = buildMarkdown({
       body: htmlToMarkdown(captured.html),
       titleOverride: captured.title,
     });
-    await deliver(markdown, msg.destination, sourceTag(captured.source), captured.title);
-    return { ok: true, source: captured.source };
+    await deliver(markdown, destination, sourceTag(captured.source), captured.title);
   } catch (err) {
-    const message = err instanceof Error ? err.message : String(err);
-    showToast(`Capture failed: ${message}`, { variant: "error" });
-    return { ok: false, error: message };
+    console.warn("[trakdown] capture failed:", err);
+    showToast(`Capture failed: ${err instanceof Error ? err.message : String(err)}`, {
+      variant: "error",
+    });
   }
 }
 
@@ -188,8 +196,26 @@ async function deliver(
     showToast(`Saved ${filename} (${tag})`);
     return;
   }
+  // Sync modes resolve their response while the popup is still focused. Wait
+  // for focus to return to the page before writing — Chrome rejects clipboard
+  // writes from an unfocused document.
+  await waitForFocus();
   await navigator.clipboard.writeText(markdown);
   showToast(`Copied ${markdown.length.toLocaleString()} chars (${tag})`);
+}
+
+async function waitForFocus(timeout = 500): Promise<void> {
+  if (document.hasFocus()) return;
+  await new Promise<void>((resolve) => {
+    const cleanup = () => {
+      window.removeEventListener("focus", onFocus);
+      clearTimeout(timer);
+      resolve();
+    };
+    const onFocus = () => cleanup();
+    const timer = setTimeout(cleanup, timeout);
+    window.addEventListener("focus", onFocus);
+  });
 }
 
 function sourceTag(source: ExtractSource): string {
