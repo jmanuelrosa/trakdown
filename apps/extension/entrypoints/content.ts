@@ -8,8 +8,9 @@ import {
   extractMainWithAi,
 } from "@/lib/extract";
 import { buildFrontmatter, type FrontmatterMap } from "@/lib/frontmatter";
+import { setLastCapture } from "@/lib/last-capture";
 import { htmlToMarkdown } from "@/lib/markdown";
-import type { CaptureRequest, CaptureResponse } from "@/lib/messaging";
+import type { CaptureMode, CaptureRequest, CaptureResponse } from "@/lib/messaging";
 import { extractPageMetadata } from "@/lib/metadata";
 import { activatePicker, cancelPicker, isPickerActive, showToast } from "@/lib/picker";
 
@@ -105,17 +106,27 @@ async function handleCapture(msg: CaptureRequest): Promise<CaptureResponse> {
     }
     return { ok: false, error: `unsupported mode "${msg.mode}"` };
   }
-  void runSyncCapture(captured, msg.destination);
+  void runSyncCapture(captured, msg.destination, msg.mode);
   return { ok: true, pending: true, source: captured.source };
 }
 
-async function runSyncCapture(captured: ExtractResult, destination: Destination): Promise<void> {
+async function runSyncCapture(
+  captured: ExtractResult,
+  destination: Destination,
+  mode: CaptureMode,
+): Promise<void> {
   try {
-    const markdown = buildMarkdown({
-      body: htmlToMarkdown(captured.html),
-      titleOverride: captured.title,
-    });
+    const body = htmlToMarkdown(captured.html);
+    const markdown = buildMarkdown({ body, titleOverride: captured.title });
     await deliver(markdown, destination, sourceTag(captured.source), captured.title);
+    await rememberCapture({
+      mode,
+      source: captured.source,
+      destination,
+      body,
+      markdown,
+      title: captured.title,
+    });
   } catch (err) {
     console.warn("[trakdown] capture failed:", err);
     showToast(`Capture failed: ${err instanceof Error ? err.message : String(err)}`, {
@@ -152,11 +163,16 @@ async function runPicker(destination: Destination): Promise<void> {
   if (!result) return;
 
   try {
-    const markdown = buildMarkdown({
-      body: htmlToMarkdown(result.element.outerHTML),
-      selector: result.selector,
-    });
+    const body = htmlToMarkdown(result.element.outerHTML);
+    const markdown = buildMarkdown({ body, selector: result.selector });
     await deliver(markdown, destination, "element picker");
+    await rememberCapture({
+      mode: "element",
+      source: ExtractSource.Picker,
+      destination,
+      body,
+      markdown,
+    });
   } catch (err) {
     console.warn("[trakdown] picker capture failed:", err);
     showToast(`Capture failed: ${err instanceof Error ? err.message : String(err)}`, {
@@ -172,6 +188,14 @@ async function runAiCapture(destination: Destination): Promise<void> {
     const body = result.bodyFormat === "markdown" ? result.body : htmlToMarkdown(result.body);
     const markdown = buildMarkdown({ body, titleOverride: result.title });
     await deliver(markdown, destination, aiCaptureTag(result), result.title);
+    await rememberCapture({
+      mode: "page-ai",
+      source: result.source,
+      destination,
+      body,
+      markdown,
+      title: result.title,
+    });
   } catch (err) {
     console.warn("[trakdown] AI capture failed:", err);
     showToast(`AI capture failed: ${err instanceof Error ? err.message : String(err)}`, {
@@ -287,6 +311,37 @@ function countWords(markdown: string): number {
     .trim();
   if (!text) return 0;
   return text.split(/\s+/).length;
+}
+
+interface RememberOpts {
+  mode: CaptureMode;
+  source: ExtractSource;
+  destination: Destination;
+  body: string;
+  markdown: string;
+  title?: string;
+}
+
+async function rememberCapture(opts: RememberOpts): Promise<void> {
+  try {
+    const url = new URL(location.href);
+    const title = (opts.title ?? document.title).trim() || location.href;
+    await setLastCapture({
+      mode: opts.mode,
+      source: opts.source,
+      destination: opts.destination,
+      url: location.href,
+      domain: url.hostname,
+      title,
+      excerpt: makeExcerpt(opts.body) ?? "",
+      charCount: opts.markdown.length,
+      capturedAt: new Date().toISOString(),
+    });
+  } catch (err) {
+    // Storage write isn't load-bearing — the capture already landed; the
+    // user just won't see the preview on next popup open. Swallow.
+    console.warn("[trakdown] failed to persist last capture:", err);
+  }
 }
 
 function makeExcerpt(markdown: string, maxLen = 180): string | undefined {

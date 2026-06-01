@@ -1,5 +1,6 @@
 import { type AiAvailability, aiAvailability } from "@/lib/ai-extract";
 import { type Destination, getDestination, setDestination } from "@/lib/destination";
+import { getLastCapture, type LastCapture } from "@/lib/last-capture";
 import type { CaptureMode, CaptureRequest, CaptureResponse } from "@/lib/messaging";
 
 const statusEl = document.getElementById("status") as HTMLParagraphElement;
@@ -51,6 +52,7 @@ void initDestination();
 void initAi();
 void populateShortcuts();
 void initSelectionAvailability();
+void initLastCapture();
 
 async function initDestination(): Promise<void> {
   destination = await getDestination();
@@ -209,4 +211,73 @@ async function runCapture(mode: CaptureMode): Promise<void> {
 
 function setStatus(msg: string): void {
   statusEl.textContent = msg;
+}
+
+// Hydrate the "last capture" preview from chrome.storage.local. Stays hidden
+// when there is nothing stored yet (first run or storage cleared).
+async function initLastCapture(): Promise<void> {
+  const section = document.getElementById("last-capture") as HTMLElement | null;
+  if (!section) return;
+  const last: LastCapture | null = await getLastCapture();
+  if (!last) return;
+
+  const modeEl = section.querySelector<HTMLElement>('[data-field="mode"]');
+  const timeEl = section.querySelector<HTMLElement>('[data-field="time"]');
+  const sizeEl = section.querySelector<HTMLElement>('[data-field="size"]');
+  const titleEl = section.querySelector<HTMLElement>('[data-field="title"]');
+  const excerptEl = section.querySelector<HTMLElement>('[data-field="excerpt"]');
+
+  if (modeEl) modeEl.textContent = modeLabel(last.mode);
+  if (timeEl) {
+    timeEl.textContent = formatRelativeTime(last.capturedAt);
+    timeEl.title = new Date(last.capturedAt).toLocaleString();
+  }
+  if (sizeEl) sizeEl.textContent = `${formatCharCount(last.charCount)} chars`;
+  if (titleEl) {
+    titleEl.textContent = last.title;
+    titleEl.title = `${last.title}\n${last.url}`;
+  }
+  if (excerptEl) {
+    if (last.excerpt) {
+      excerptEl.textContent = last.excerpt;
+    } else {
+      excerptEl.hidden = true;
+    }
+  }
+
+  section.hidden = false;
+}
+
+// Reuse the labels rendered on the capture buttons so the preview never
+// diverges from the actions if we ever rename a mode.
+function modeLabel(mode: CaptureMode): string {
+  const btn = document.querySelector<HTMLButtonElement>(`button[data-mode="${mode}"]`);
+  const label = btn?.querySelector<HTMLElement>(".btn-label, .label");
+  return label?.textContent?.trim() || mode;
+}
+
+function formatRelativeTime(iso: string): string {
+  const then = new Date(iso).getTime();
+  if (!Number.isFinite(then)) return "";
+  const diff = Date.now() - then;
+  const minutes = Math.round(diff / 60_000);
+  if (minutes < 1) return "just now";
+  if (minutes < 60) return `${minutes}m ago`;
+  const hours = Math.round(minutes / 60);
+  if (hours < 24) return `${hours}h ago`;
+  const days = Math.round(hours / 24);
+  if (days < 7) return `${days}d ago`;
+  const date = new Date(iso);
+  const sameYear = date.getFullYear() === new Date().getFullYear();
+  return date.toLocaleDateString(undefined, {
+    month: "short",
+    day: "numeric",
+    year: sameYear ? undefined : "numeric",
+  });
+}
+
+function formatCharCount(n: number): string {
+  if (n < 1000) return String(n);
+  if (n < 10_000) return `${(n / 1000).toFixed(1)}k`;
+  return `${Math.round(n / 1000)}k`;
 }
