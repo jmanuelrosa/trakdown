@@ -119,17 +119,25 @@ export function activatePicker(): Promise<PickerResult | null> {
   });
 }
 
-export function showToast(message: string, opts: { variant?: "success" | "error" } = {}): void {
+export function showToast(
+  message: string,
+  opts: { variant?: "success" | "error"; persist?: boolean } = {},
+): void {
   injectStyle();
   document.getElementById(TOAST_ID)?.remove();
 
   const toast = document.createElement("div");
   toast.id = TOAST_ID;
   toast.dataset.variant = opts.variant ?? "success";
+  if (opts.persist) toast.dataset.busy = "true";
   toast.textContent = message;
   document.documentElement.appendChild(toast);
 
   requestAnimationFrame(() => toast.classList.add("show"));
+  // Persistent toasts stay up until the next showToast() call replaces them.
+  // Used by AI capture so the user has continuous feedback during the 2–5 s
+  // model run.
+  if (opts.persist) return;
   setTimeout(() => {
     toast.classList.remove("show");
     setTimeout(() => toast.remove(), 280);
@@ -263,6 +271,22 @@ function injectStyle(): void {
     #${TOAST_ID}[data-variant="error"] {
       background: rgb(127, 26, 26);
       border-left-color: rgb(248, 113, 113);
+    }
+
+    /* Pulsing left border while a long-running capture (e.g. AI) is in flight. */
+    #${TOAST_ID}[data-busy="true"] {
+      animation: trakdown-toast-pulse 1.4s ease-in-out infinite;
+    }
+
+    @keyframes trakdown-toast-pulse {
+      0%, 100% { border-left-color: rgb(15, 139, 126); }
+      50% { border-left-color: rgb(125, 220, 207); }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      #${TOAST_ID}[data-busy="true"] {
+        animation: none;
+      }
     }
   `;
   document.documentElement.appendChild(style);
