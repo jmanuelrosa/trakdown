@@ -141,6 +141,8 @@ async function initSelectionAvailability(): Promise<void> {
     selectionButton.disabled = true;
     selectionButton.title = "Select text on the page first, then reopen this popup.";
     selectionButton.dataset.reason = "no-selection";
+    const hint = document.getElementById("capture-selection-hint");
+    if (hint) hint.hidden = false;
   }
 }
 

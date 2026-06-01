@@ -310,6 +310,34 @@ kbd[hidden] {
   opacity: 0.6;
 }
 
+/* Inline hint shown directly under a disabled action button to explain *why*
+   it's off (no hover required). Used by the Selection button when there's no
+   text selected; mirrors the muted typographic voice of the AI button's hint.
+   The `↑` glyph in teal anchors the hint to the button above. */
+.action-hint {
+  margin: -2px 0 0;
+  padding-left: 12px;
+  font-size: 10.5px;
+  font-weight: 400;
+  color: var(--fg-muted);
+  letter-spacing: -0.005em;
+  line-height: 1.4;
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+}
+
+.action-hint[hidden] {
+  display: none;
+}
+
+.action-hint::before {
+  content: "↑";
+  color: var(--brand);
+  font-weight: 600;
+  font-size: 11px;
+}
+
 /* Busy state — when one button is executing, the others fade and are blocked.
    The active button stays solid via its .is-active style above. */
 body.is-busy .btn:not(.is-active) {

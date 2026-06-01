@@ -48,10 +48,19 @@
           data-mode="selection"
           data-command="capture-selection"
           class="btn btn-ghost"
+          aria-describedby="capture-selection-hint"
         >
           <span class="btn-label">Capture selection</span>
           <kbd hidden></kbd>
         </button>
+        <p
+          id="capture-selection-hint"
+          class="action-hint"
+          data-for="capture-selection"
+          hidden
+        >
+          Select text on the page, then reopen.
+        </p>
         <button
           id="capture-page"
           type="button"
