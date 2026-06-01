@@ -1,6 +1,12 @@
 import { Destination } from "@/lib/destination";
 import { buildFilename, triggerDownload } from "@/lib/download";
-import { type ExtractResult, ExtractSource, extractMain, extractMainWithAi } from "@/lib/extract";
+import {
+  type AiCaptureResult,
+  type ExtractResult,
+  ExtractSource,
+  extractMain,
+  extractMainWithAi,
+} from "@/lib/extract";
 import { buildFrontmatter, type FrontmatterMap } from "@/lib/frontmatter";
 import { htmlToMarkdown } from "@/lib/markdown";
 import type { CaptureRequest, CaptureResponse } from "@/lib/messaging";
@@ -160,20 +166,33 @@ async function runPicker(destination: Destination): Promise<void> {
 }
 
 async function runAiCapture(destination: Destination): Promise<void> {
-  showToast("AI capturing page…");
+  showToast("AI capturing page…", { persist: true });
   try {
     const result = await extractMainWithAi(document);
-    const markdown = buildMarkdown({
-      body: htmlToMarkdown(result.html),
-      titleOverride: result.title,
-    });
-    const tag = result.source === ExtractSource.AI ? "AI" : `${result.source} fallback`;
-    await deliver(markdown, destination, tag, result.title);
+    const body = result.bodyFormat === "markdown" ? result.body : htmlToMarkdown(result.body);
+    const markdown = buildMarkdown({ body, titleOverride: result.title });
+    await deliver(markdown, destination, aiCaptureTag(result), result.title);
   } catch (err) {
     console.warn("[trakdown] AI capture failed:", err);
     showToast(`AI capture failed: ${err instanceof Error ? err.message : String(err)}`, {
       variant: "error",
     });
+  }
+}
+
+function aiCaptureTag(result: AiCaptureResult): string {
+  if (result.source === ExtractSource.AI) return "AI";
+  switch (result.aiFailureReason) {
+    case "too-large":
+      return `${result.source} (AI input too large)`;
+    case "unavailable":
+      return `${result.source} (AI unavailable)`;
+    case "empty":
+      return `${result.source} (AI returned nothing)`;
+    case "error":
+      return `${result.source} (AI error)`;
+    default:
+      return `${result.source} fallback`;
   }
 }
 
@@ -187,35 +206,40 @@ async function deliver(
   tag: string,
   titleOverride?: string,
 ): Promise<void> {
+  const filenameOpts = { title: titleOverride ?? document.title, url: location.href };
+
   if (destination === Destination.Download) {
-    const filename = buildFilename({
-      title: titleOverride ?? document.title,
-      url: location.href,
-    });
+    const filename = buildFilename(filenameOpts);
     triggerDownload(markdown, filename);
     showToast(`Saved ${filename} (${tag})`);
     return;
   }
-  // Sync modes resolve their response while the popup is still focused. Wait
-  // for focus to return to the page before writing — Chrome rejects clipboard
-  // writes from an unfocused document.
-  await waitForFocus();
-  await navigator.clipboard.writeText(markdown);
-  showToast(`Copied ${markdown.length.toLocaleString()} chars (${tag})`);
+
+  // Route the clipboard write through the background service worker, which
+  // owns an offscreen document for the actual writeText call. The offscreen
+  // page runs in the extension process and isn't subject to Chrome's
+  // "document must be focused" rule — so this works whether the user is on
+  // the page, in DevTools, or in another window entirely.
+  try {
+    await copyViaBackground(markdown);
+    showToast(`Copied ${markdown.length.toLocaleString()} chars (${tag})`);
+  } catch (err) {
+    // Offscreen unavailable / rejected for some other reason. Never drop
+    // the capture — save it as a file and tell the user where it went.
+    const filename = buildFilename(filenameOpts);
+    triggerDownload(markdown, filename);
+    const reason = err instanceof Error ? err.message : "clipboard error";
+    showToast(`Couldn't copy (${reason}). Saved ${filename} instead.`, { variant: "error" });
+  }
 }
 
-async function waitForFocus(timeout = 500): Promise<void> {
-  if (document.hasFocus()) return;
-  await new Promise<void>((resolve) => {
-    const cleanup = () => {
-      window.removeEventListener("focus", onFocus);
-      clearTimeout(timer);
-      resolve();
-    };
-    const onFocus = () => cleanup();
-    const timer = setTimeout(cleanup, timeout);
-    window.addEventListener("focus", onFocus);
-  });
+async function copyViaBackground(text: string): Promise<void> {
+  const res = (await chrome.runtime.sendMessage({ type: "trakdown:copy", text })) as
+    | { ok: boolean; error?: string }
+    | undefined;
+  if (!res?.ok) {
+    throw new Error(res?.error ?? "clipboard write failed");
+  }
 }
 
 function sourceTag(source: ExtractSource): string {
