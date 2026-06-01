@@ -356,3 +356,32 @@ body.is-busy .btn:not(.is-active) {
     animation: none;
   }
 }
+
+/* Popup footer — single muted Sponsor link. Sits below status, never moves
+   when status text updates. Quiet by default; only deepens on hover/focus
+   so it never competes with the four capture buttons above. */
+.popup-footer {
+  padding: 8px 16px 10px;
+  border-top: 1px solid var(--rule);
+  text-align: center;
+}
+
+.sponsor-link {
+  font-family: var(--mono);
+  font-size: 11px;
+  font-weight: 400;
+  color: var(--muted);
+  text-decoration: none;
+  letter-spacing: -0.005em;
+  transition: color 120ms ease;
+}
+
+.sponsor-link:hover {
+  color: var(--brand);
+}
+
+.sponsor-link:focus-visible {
+  outline: 2px solid var(--brand);
+  outline-offset: 2px;
+  border-radius: 3px;
+}

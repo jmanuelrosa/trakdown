@@ -2,6 +2,8 @@
 
 Capture web pages and DOM regions as clean markdown — for AI consumption, from authenticated pages, with no copy-paste mangling.
 
+Free, MIT-licensed. If trakdown earns a spot in your workflow, you can sponsor at [github.com/sponsors/jmanuelrosa](https://github.com/sponsors/jmanuelrosa) — entirely optional.
+
 Spec: [`docs/ideas/trakdown.md`](docs/ideas/trakdown.md)
 
 ## Monorepo layout
