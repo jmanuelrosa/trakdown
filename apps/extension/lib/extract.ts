@@ -1,5 +1,5 @@
 import { Readability } from "@mozilla/readability";
-import { aiExtract } from "./ai-extract";
+import { type AiFailureReason, aiExtract } from "./ai-extract";
 import { precleanHtmlForAi } from "./preclean";
 
 // Enum-shaped object literal with a derived type. Acts like an enum at call
@@ -21,6 +21,16 @@ export interface ExtractResult {
   source: ExtractSource;
 }
 
+// AI mode's return shape. Differs from ExtractResult because the AI can
+// output Markdown directly, skipping the HTML→Markdown step downstream.
+export interface AiCaptureResult {
+  body: string;
+  bodyFormat: "html" | "markdown";
+  title?: string;
+  source: ExtractSource;
+  aiFailureReason?: AiFailureReason;
+}
+
 export function extractMain(doc: Document): ExtractResult {
   try {
     const cloned = doc.cloneNode(true) as Document;
@@ -39,12 +49,30 @@ export function extractMain(doc: Document): ExtractResult {
   return { html: doc.body.outerHTML, source: ExtractSource.Fallback };
 }
 
-export async function extractMainWithAi(doc: Document): Promise<ExtractResult> {
-  const precleaned = precleanHtmlForAi(doc);
-  const ai = await aiExtract(precleaned);
-  if (ai?.html) {
-    return { html: ai.html, title: doc.title, source: ExtractSource.AI };
+// Run Readability first, then feed its main-content HTML to the on-device
+// model. Readability's output is typically 5–15K chars vs the 50K+ a raw
+// precleaned body can produce, so the AI stays under Gemini Nano's context
+// window on long pages. The model returns Markdown directly — no Turndown
+// roundtrip on the AI path.
+export async function extractMainWithAi(doc: Document): Promise<AiCaptureResult> {
+  const baseline = extractMain(doc);
+  const candidate = baseline.source === ExtractSource.Page ? baseline.html : precleanHtmlForAi(doc);
+
+  const ai = await aiExtract(candidate);
+  if (ai.ok) {
+    return {
+      body: ai.markdown,
+      bodyFormat: "markdown",
+      title: baseline.title ?? doc.title,
+      source: ExtractSource.AI,
+    };
   }
-  // AI unavailable or returned nothing — fall back to Readability + raw HTML chain.
-  return extractMain(doc);
+
+  return {
+    body: baseline.html,
+    bodyFormat: "html",
+    title: baseline.title,
+    source: baseline.source,
+    aiFailureReason: ai.reason,
+  };
 }
