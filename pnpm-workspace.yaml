@@ -15,3 +15,24 @@ allowBuilds:
   esbuild: true
   sharp: true
   spawn-sync: true
+# Transitive-dependency overrides. Each entry should explain why it exists
+# so future maintainers know when it's safe to drop.
+overrides:
+  # wxt 0.20.26 brings in @webext-core/isolated-element via ^1.1.3.
+  # Version 1.1.5 was published without trusted-publisher attestation,
+  # which trustPolicy: no-downgrade flags as a supply-chain regression.
+  # Pin to 1.1.4 (last attested 1.x release) until wxt bumps upstream.
+  "@webext-core/isolated-element": "1.1.4"
+  # astro 6.4.2 brings in tinyclip via ^0.1.12. Version 0.1.13 dropped
+  # from trusted-publisher to plain provenance, which trustPolicy:
+  # no-downgrade flags. Pin to 0.1.12 (last trusted-publisher release)
+  # until upstream restores attestation.
+  "tinyclip": "0.1.12"
+  # @tailwindcss/vite 4.3.0 was built against pre-Rolldown Vite and crashes
+  # with "Missing field 'tsconfigPaths' on BindingViteResolvePluginConfig"
+  # when loaded as a plugin in Vite 8 (Rolldown-based). Pin Vite to 7.x so
+  # the web build uses the pre-Rolldown loader. Both apps accept Vite 7
+  # (astro requires ^7.3.2; wxt accepts ^5.4.19 || ^6.3.4 || ^7 || ^8).
+  # The extension loses Rolldown's speedup until @tailwindcss/vite supports
+  # Vite 8 / Rolldown, at which point this override can drop.
+  "vite": "7.3.3"
