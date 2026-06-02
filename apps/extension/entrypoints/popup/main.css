@@ -310,6 +310,34 @@ kbd[hidden] {
   opacity: 0.6;
 }
 
+/* Inline hint shown directly under a disabled action button to explain *why*
+   it's off (no hover required). Used by the Selection button when there's no
+   text selected; mirrors the muted typographic voice of the AI button's hint.
+   The `↑` glyph in teal anchors the hint to the button above. */
+.action-hint {
+  margin: -2px 0 0;
+  padding-left: 12px;
+  font-size: 10.5px;
+  font-weight: 400;
+  color: var(--fg-muted);
+  letter-spacing: -0.005em;
+  line-height: 1.4;
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+}
+
+.action-hint[hidden] {
+  display: none;
+}
+
+.action-hint::before {
+  content: "↑";
+  color: var(--brand);
+  font-weight: 600;
+  font-size: 11px;
+}
+
 /* Busy state — when one button is executing, the others fade and are blocked.
    The active button stays solid via its .is-active style above. */
 body.is-busy .btn:not(.is-active) {
@@ -333,6 +361,82 @@ body.is-busy .btn:not(.is-active) {
   content: "› ";
   color: var(--brand);
   font-weight: 600;
+}
+
+/* Last-capture preview — the recap card under the status line. Quiet by
+   default: dim cream tint, no border that competes with the action buttons.
+   `last` label gets the teal treatment so the eye anchors on the meta row.
+   Excerpt is line-clamped to 2 lines so the popup never grows tall on dense
+   pages. */
+.last-capture {
+  margin: 14px 0 0;
+  padding: 10px 12px;
+  background: color-mix(in oklab, var(--brand) 5%, var(--surface));
+  border: 1px solid color-mix(in oklab, var(--brand) 14%, transparent);
+  border-radius: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.last-capture[hidden] {
+  display: none;
+}
+
+.last-meta {
+  margin: 0;
+  font-size: 10.5px;
+  font-weight: 500;
+  color: var(--fg-muted);
+  letter-spacing: 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 6px;
+  line-height: 1.3;
+}
+
+.last-label {
+  font-size: 9.5px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--brand-deep);
+}
+
+.last-mode {
+  color: var(--fg);
+  font-weight: 500;
+}
+
+.last-sep {
+  color: var(--muted);
+}
+
+.last-title {
+  margin: 0;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--fg);
+  line-height: 1.35;
+  letter-spacing: -0.005em;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.last-excerpt {
+  margin: 0;
+  font-size: 11px;
+  font-weight: 400;
+  color: var(--fg-muted);
+  line-height: 1.4;
+  letter-spacing: -0.002em;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
 
 @keyframes dot-pulse {
