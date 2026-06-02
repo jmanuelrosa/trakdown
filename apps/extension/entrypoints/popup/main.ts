@@ -1,5 +1,6 @@
 import { type AiAvailability, aiAvailability } from "@/lib/ai-extract";
 import { type Destination, getDestination, setDestination } from "@/lib/destination";
+import { getIncludeFrontmatter, setIncludeFrontmatter } from "@/lib/include-frontmatter";
 import { getLastCapture, type LastCapture } from "@/lib/last-capture";
 import type { CaptureMode, CaptureRequest, CaptureResponse } from "@/lib/messaging";
 
@@ -49,6 +50,7 @@ async function cancelPickerOnActiveTab(): Promise<boolean> {
 }
 
 void initDestination();
+void initFrontmatterToggle();
 void initAi();
 void populateShortcuts();
 void initSelectionAvailability();
@@ -75,6 +77,15 @@ function applyDestinationUi(value: Destination): void {
     const isActive = btn.dataset.dest === value;
     btn.classList.toggle("is-active", isActive);
     btn.setAttribute("aria-pressed", String(isActive));
+  });
+}
+
+async function initFrontmatterToggle(): Promise<void> {
+  const input = document.getElementById("include-frontmatter") as HTMLInputElement | null;
+  if (!input) return;
+  input.checked = await getIncludeFrontmatter();
+  input.addEventListener("change", () => {
+    void setIncludeFrontmatter(input.checked);
   });
 }
 

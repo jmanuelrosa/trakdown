@@ -8,6 +8,7 @@ import {
   extractMainWithAi,
 } from "@/lib/extract";
 import { buildFrontmatter, type FrontmatterMap } from "@/lib/frontmatter";
+import { getIncludeFrontmatter } from "@/lib/include-frontmatter";
 import { setLastCapture } from "@/lib/last-capture";
 import { htmlToMarkdown } from "@/lib/markdown";
 import type { CaptureMode, CaptureRequest, CaptureResponse } from "@/lib/messaging";
@@ -117,7 +118,12 @@ async function runSyncCapture(
 ): Promise<void> {
   try {
     const body = htmlToMarkdown(captured.html);
-    const markdown = buildMarkdown({ body, titleOverride: captured.title });
+    const includeFrontmatter = await getIncludeFrontmatter();
+    const markdown = buildMarkdown({
+      body,
+      titleOverride: captured.title,
+      includeFrontmatter,
+    });
     await deliver(markdown, destination, sourceTag(captured.source), captured.title);
     await rememberCapture({
       mode,
@@ -164,7 +170,12 @@ async function runPicker(destination: Destination): Promise<void> {
 
   try {
     const body = htmlToMarkdown(result.element.outerHTML);
-    const markdown = buildMarkdown({ body, selector: result.selector });
+    const includeFrontmatter = await getIncludeFrontmatter();
+    const markdown = buildMarkdown({
+      body,
+      selector: result.selector,
+      includeFrontmatter,
+    });
     await deliver(markdown, destination, "element picker");
     await rememberCapture({
       mode: "element",
@@ -186,7 +197,12 @@ async function runAiCapture(destination: Destination): Promise<void> {
   try {
     const result = await extractMainWithAi(document);
     const body = result.bodyFormat === "markdown" ? result.body : htmlToMarkdown(result.body);
-    const markdown = buildMarkdown({ body, titleOverride: result.title });
+    const includeFrontmatter = await getIncludeFrontmatter();
+    const markdown = buildMarkdown({
+      body,
+      titleOverride: result.title,
+      includeFrontmatter,
+    });
     await deliver(markdown, destination, aiCaptureTag(result), result.title);
     await rememberCapture({
       mode: "page-ai",
@@ -275,9 +291,12 @@ interface BuildMarkdownOpts {
   body: string;
   titleOverride?: string;
   selector?: string;
+  includeFrontmatter: boolean;
 }
 
 function buildMarkdown(opts: BuildMarkdownOpts): string {
+  if (!opts.includeFrontmatter) return opts.body;
+
   const meta = extractPageMetadata(document);
   const url = new URL(location.href);
   const title = (opts.titleOverride ?? meta.title ?? document.title).trim() || location.href;
