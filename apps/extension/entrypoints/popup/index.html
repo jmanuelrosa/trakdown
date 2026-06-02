@@ -48,10 +48,19 @@
           data-mode="selection"
           data-command="capture-selection"
           class="btn btn-ghost"
+          aria-describedby="capture-selection-hint"
         >
           <span class="btn-label">Capture selection</span>
           <kbd hidden></kbd>
         </button>
+        <p
+          id="capture-selection-hint"
+          class="action-hint"
+          data-for="capture-selection"
+          hidden
+        >
+          Select text on the page, then reopen.
+        </p>
         <button
           id="capture-page"
           type="button"
@@ -79,6 +88,18 @@
         </button>
       </div>
       <p id="status" role="status" aria-live="polite">Ready</p>
+      <section id="last-capture" class="last-capture" hidden aria-label="Last capture">
+        <p class="last-meta">
+          <span class="last-label">last</span>
+          <span class="last-mode" data-field="mode"></span>
+          <span class="last-sep" aria-hidden="true">·</span>
+          <span class="last-time" data-field="time"></span>
+          <span class="last-sep" aria-hidden="true">·</span>
+          <span class="last-size" data-field="size"></span>
+        </p>
+        <p class="last-title" data-field="title"></p>
+        <p class="last-excerpt" data-field="excerpt"></p>
+      </section>
     </main>
     <footer class="popup-footer">
       <a
