@@ -57,7 +57,11 @@ This "fire and forget" pattern is load-bearing — the picker waits for user int
 
 **Picker, selection, and Readability all flow through the same Turndown + GFM singleton** (`lib/markdown.ts`). AI Deep Clean adds a `lib/preclean.ts` step that aggressively strips DOM noise before feeding to `LanguageModel` (Chrome's Prompt API).
 
-**Keyboard shortcut**: `background.ts` listens for `chrome.commands.onCommand` (default `⌘⇧K` / `Ctrl+Shift+K` → activate picker) and forwards the message to the active tab.
+**Keyboard shortcuts**: `wxt.config.ts` declares four `chrome.commands` — `capture-element` (`⌘⇧K`), `capture-selection` (`⌘⇧J`), `capture-page` (`⌘⇧Y`), `capture-page-ai` (`⌘⇧U`). `background.ts` listens for `chrome.commands.onCommand` and forwards the matching message to the active tab. Users rebind in `chrome://extensions/shortcuts`.
+
+**Persisted popup state** (`chrome.storage.local`):
+- `destination` — `clipboard` or `download`. Set in the popup toggle, read by the content-script `deliver()` so the keyboard-shortcut and popup paths agree.
+- `last_capture` — `{mode, source, destination, url, domain, title, excerpt (180 chars), charCount, capturedAt}`. Written by `lib/last-capture.ts` after every successful deliver; read on popup open to render the recap card under the status line. Bounded excerpt size keeps the stored payload tiny — page content never leaves the machine.
 
 ## Web architecture
 
