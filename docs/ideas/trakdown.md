@@ -39,22 +39,21 @@ No cookies handling, no session replay, no auth code at all.
 - [ ] Markdown pasted into Claude/ChatGPT renders tables and code correctly
 
 ## MVP Scope
-**In:**
-- Chrome extension (MV3), single browser, no store submission required for v0
-- Three capture modes: element picker, selection, full page
-- Keyboard shortcut for each (configurable)
-- HTML→markdown via Turndown + GFM plugin (tables, strikethrough, task lists)
-- Output: clipboard (default), download `.md` (alt)
-- Tiny popup UI: mode selector + last-captured preview
-- Source URL prepended to every capture as a header
+**In** — all shipped in v0:
+- [x] Chrome extension (MV3), single browser, no store submission required for v0
+- [x] Three capture modes: element picker, selection, full page
+- [x] Keyboard shortcut for each (configurable — four commands declared in `wxt.config.ts`, rebindable at `chrome://extensions/shortcuts`)
+- [x] HTML→markdown via Turndown + GFM plugin (tables, strikethrough, task lists)
+- [x] Output: clipboard (default), download `.md` (alt)
+- [x] Tiny popup UI: mode selector + last-captured preview
+- [x] Source URL prepended to every capture as a header (YAML frontmatter with title, source, domain, captured_at, excerpt, etc.)
 
 **Out:**
 - CLI (deferred to v0.x — Playwright path for non-auth pages)
 - Firefox/Safari port
 - Per-domain extraction rules (deferred — see whether Turndown handles
   the target pages well enough first)
-- window.ai integration (deferred — only worth it if rule-based output
-  proves insufficient)
+- ~~window.ai integration~~ — **shipped** as opt-in "AI Deep Clean" mode via Chrome's on-device Prompt API (Gemini Nano). Pre-cleans the DOM and feeds it to the model; falls back to Readability when the model is unavailable or the input is too large.
 - Settings sync, cloud, accounts, server-side anything
 - Destinations beyond clipboard/file (no "send to Obsidian," no "open
   in Claude")
@@ -74,12 +73,14 @@ No cookies handling, no session replay, no auth code at all.
   port if and when there's demand.
 
 ## Open Questions
-- Activation: browser action click, keyboard shortcut, or both? Default
-  shortcut for each mode?
-- Element picker: nearest-block-ancestor heuristic on hover, or pure
-  element-under-cursor (with arrow keys to expand selection up the tree)?
-- Preview-before-copy or copy-immediately?
-- Per-capture toggle for "include source URL header"?
-- License — MIT for max adoption, or AGPL to keep any forks open?
-- Distribution path — GitHub releases + unpacked install for v0, Chrome
-  Web Store once stable?
+
+**Resolved in v0:**
+- ~~Activation: browser action click, keyboard shortcut, or both?~~ → both. Toolbar popup plus four `chrome.commands` shortcuts (`⌘⇧K` picker, `⌘⇧J` selection, `⌘⇧Y` page, `⌘⇧U` page-AI; Ctrl on Windows/Linux).
+- ~~Element picker heuristic~~ → element-under-cursor with arrow keys to expand the selection up the DOM tree.
+- ~~Preview-before-copy or copy-immediately?~~ → copy-immediately. The popup surfaces a *last-captured* recap (mode, time, char count, title, excerpt) so the user can verify after the fact without slowing the capture itself.
+- ~~License~~ → MIT.
+- ~~Distribution path~~ → GitHub releases + unpacked install for v0. Chrome Web Store listing still pending.
+
+**Still open:**
+- Per-capture toggle for "include source URL header"? — frontmatter is currently always emitted.
+- Chrome Web Store listing — needs review submission.

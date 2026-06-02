@@ -77,4 +77,11 @@ Dependabot is configured in [`.github/dependabot.yml`](.github/dependabot.yml) i
 
 ## Status
 
-v0 — element picker, text selection, full-page capture, and AI Deep Clean (opt-in; requires Chrome 138+ with on-device Gemini Nano enabled). Chrome only.
+v0 — Chrome only. Shipping today:
+
+- **Capture modes**: element picker (`⌘⇧K`), text selection (`⌘⇧J`), full page (`⌘⇧Y`), and AI Deep Clean (`⌘⇧U` — opt-in, requires Chrome 138+ with on-device Gemini Nano enabled). Shortcuts are rebindable at `chrome://extensions/shortcuts`.
+- **Output**: clipboard (default) or `.md` download, toggled in the popup and persisted.
+- **Popup**: mode selector, destination toggle, AI availability hint, and a recap of the last capture (mode, time, char count, title, 2-line excerpt).
+- **Frontmatter**: every capture starts with YAML containing title, source URL, domain, timestamp, word count, and excerpt.
+
+Next up: Chrome Web Store listing, and the Playwright-based CLI for public pages (`apps/cli/`, deferred to v0.x). See [`docs/ideas/trakdown.md`](docs/ideas/trakdown.md) for the full scope.
