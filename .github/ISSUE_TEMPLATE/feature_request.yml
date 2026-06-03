@@ -3,11 +3,6 @@ description: Suggest an improvement or a new capability
 title: "feat: "
 labels: [enhancement]
 body:
-  - type: markdown
-    attributes:
-      value: |
-        Before filing, please skim [`docs/ideas/trakdown.md`](https://github.com/jmanuelrosa/trakdown/blob/main/docs/ideas/trakdown.md) — the "Not Doing (and Why)" section explains scope decisions that are intentional.
-
   - type: dropdown
     id: surface
     attributes:
@@ -52,5 +47,5 @@ body:
     attributes:
       label: Scope check
       options:
-        - label: I've read the "Not Doing (and Why)" section in `docs/ideas/trakdown.md` and this isn't on that list.
+        - label: I've checked open and closed issues to confirm this isn't already covered or intentionally out of scope.
           required: true

@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 trakdown is a Chrome MV3 extension that captures any web page — including authenticated dashboards behind a login — as clean markdown for AI workflows. Three capture modes (element picker, text selection, full page) plus an opt-in AI Deep Clean using Chrome's on-device Gemini Nano. The repo also hosts the landing page at `apps/web`.
 
-Spec: [`docs/ideas/trakdown.md`](docs/ideas/trakdown.md). Brand: [`docs/marketing/brand.md`](docs/marketing/brand.md). Live URL: `https://jmanuelrosa.github.io/trakdown/`.
+Brand: [`docs/marketing/brand.md`](docs/marketing/brand.md). Live URL: `https://jmanuelrosa.github.io/trakdown/`.
 
 ## Monorepo layout
 
@@ -15,7 +15,7 @@ pnpm workspaces. Two real apps; `apps/cli/` and `packages/core/` are intentional
 ```
 apps/extension/    # Chrome MV3 extension (WXT)
 apps/web/          # Landing page (Astro 5 + Tailwind v4)
-docs/              # Spec, brand, deploy, analytics
+docs/              # Brand, deploy, analytics
 ```
 
 ## Requirements
@@ -61,6 +61,7 @@ This "fire and forget" pattern is load-bearing — the picker waits for user int
 
 **Persisted popup state** (`chrome.storage.local`):
 - `destination` — `clipboard` or `download`. Set in the popup toggle, read by the content-script `deliver()` so the keyboard-shortcut and popup paths agree.
+- `include_frontmatter` — boolean, default `true`. Set in the popup checkbox, read by `buildMarkdown` in `content.ts`. When `false`, captures are delivered as raw body with no YAML header. The content script reads it on every capture, so both popup-click and keyboard-shortcut paths share the same setting.
 - `last_capture` — `{mode, source, destination, url, domain, title, excerpt (180 chars), charCount, capturedAt}`. Written by `lib/last-capture.ts` after every successful deliver; read on popup open to render the recap card under the status line. Bounded excerpt size keeps the stored payload tiny — page content never leaves the machine.
 
 ## Web architecture

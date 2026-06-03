@@ -4,8 +4,6 @@ Capture web pages and DOM regions as clean markdown — for AI consumption, from
 
 Free, MIT-licensed. If trakdown earns a spot in your workflow, you can sponsor at [github.com/sponsors/jmanuelrosa](https://github.com/sponsors/jmanuelrosa) — entirely optional.
 
-Spec: [`docs/ideas/trakdown.md`](docs/ideas/trakdown.md)
-
 ## Monorepo layout
 
 ```
@@ -81,7 +79,7 @@ v0 — Chrome only. Shipping today:
 
 - **Capture modes**: element picker (`⌘⇧K`), text selection (`⌘⇧J`), full page (`⌘⇧Y`), and AI Deep Clean (`⌘⇧U` — opt-in, requires Chrome 138+ with on-device Gemini Nano enabled). Shortcuts are rebindable at `chrome://extensions/shortcuts`.
 - **Output**: clipboard (default) or `.md` download, toggled in the popup and persisted.
-- **Popup**: mode selector, destination toggle, AI availability hint, and a recap of the last capture (mode, time, char count, title, 2-line excerpt).
-- **Frontmatter**: every capture starts with YAML containing title, source URL, domain, timestamp, word count, and excerpt.
+- **Popup**: mode selector, destination toggle, "Include frontmatter" checkbox, AI availability hint, and a recap of the last capture (mode, time, char count, title, 2-line excerpt).
+- **Frontmatter**: every capture starts with YAML containing title, source URL, domain, timestamp, word count, and excerpt — toggleable from the popup for users who want raw body only.
 
-Next up: Chrome Web Store listing, and the Playwright-based CLI for public pages (`apps/cli/`, deferred to v0.x). See [`docs/ideas/trakdown.md`](docs/ideas/trakdown.md) for the full scope.
+Next up: Chrome Web Store listing, and the Playwright-based CLI for public pages (`apps/cli/`, deferred to v0.x).
