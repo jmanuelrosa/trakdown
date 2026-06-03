@@ -1,6 +1,6 @@
 # Contributing to trakdown
 
-Thanks for your interest. trakdown is a small, opinionated tool — contributions that align with the [spec](docs/ideas/trakdown.md) and [brand guidelines](docs/marketing/brand.md) are welcome.
+Thanks for your interest. trakdown is a small, opinionated tool — contributions that align with the [brand guidelines](docs/marketing/brand.md) are welcome.
 
 ## Setup
 
@@ -31,7 +31,6 @@ Load the extension into Chrome: `chrome://extensions` → enable Developer mode 
 ## Architecture pointers
 
 - Big-picture architecture, sandbox quirks, brand discipline → [`CLAUDE.md`](CLAUDE.md)
-- Product spec, MVP scope, "Not Doing" list → [`docs/ideas/trakdown.md`](docs/ideas/trakdown.md)
 - Brand identity (colors, type, voice) → [`docs/marketing/brand.md`](docs/marketing/brand.md)
 - Deploy walkthrough → [`docs/deploy.md`](docs/deploy.md)
 - Analytics events → [`docs/analytics.md`](docs/analytics.md)
@@ -64,7 +63,7 @@ A few project-specific rules — the strict `.npmrc` makes some of these unavoid
 
 ## What's out of scope
 
-Before proposing big changes, check the "Not Doing (and Why)" section of [`docs/ideas/trakdown.md`](docs/ideas/trakdown.md). A few items intentionally deferred:
+A few items are intentionally deferred:
 
 - Firefox / Safari ports
 - Read-later or queue features

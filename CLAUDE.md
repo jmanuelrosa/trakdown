@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 trakdown is a Chrome MV3 extension that captures any web page — including authenticated dashboards behind a login — as clean markdown for AI workflows. Three capture modes (element picker, text selection, full page) plus an opt-in AI Deep Clean using Chrome's on-device Gemini Nano. The repo also hosts the landing page at `apps/web`.
 
-Spec: [`docs/ideas/trakdown.md`](docs/ideas/trakdown.md). Brand: [`docs/marketing/brand.md`](docs/marketing/brand.md). Live URL: `https://jmanuelrosa.github.io/trakdown/`.
+Brand: [`docs/marketing/brand.md`](docs/marketing/brand.md). Live URL: `https://jmanuelrosa.github.io/trakdown/`.
 
 ## Monorepo layout
 
@@ -15,7 +15,7 @@ pnpm workspaces. Two real apps; `apps/cli/` and `packages/core/` are intentional
 ```
 apps/extension/    # Chrome MV3 extension (WXT)
 apps/web/          # Landing page (Astro 5 + Tailwind v4)
-docs/              # Spec, brand, deploy, analytics
+docs/              # Brand, deploy, analytics
 ```
 
 ## Requirements

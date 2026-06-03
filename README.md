@@ -4,8 +4,6 @@ Capture web pages and DOM regions as clean markdown — for AI consumption, from
 
 Free, MIT-licensed. If trakdown earns a spot in your workflow, you can sponsor at [github.com/sponsors/jmanuelrosa](https://github.com/sponsors/jmanuelrosa) — entirely optional.
 
-Spec: [`docs/ideas/trakdown.md`](docs/ideas/trakdown.md)
-
 ## Monorepo layout
 
 ```
@@ -84,4 +82,4 @@ v0 — Chrome only. Shipping today:
 - **Popup**: mode selector, destination toggle, "Include frontmatter" checkbox, AI availability hint, and a recap of the last capture (mode, time, char count, title, 2-line excerpt).
 - **Frontmatter**: every capture starts with YAML containing title, source URL, domain, timestamp, word count, and excerpt — toggleable from the popup for users who want raw body only.
 
-Next up: Chrome Web Store listing, and the Playwright-based CLI for public pages (`apps/cli/`, deferred to v0.x). See [`docs/ideas/trakdown.md`](docs/ideas/trakdown.md) for the full scope.
+Next up: Chrome Web Store listing, and the Playwright-based CLI for public pages (`apps/cli/`, deferred to v0.x).
