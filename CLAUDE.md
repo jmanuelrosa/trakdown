@@ -61,6 +61,7 @@ This "fire and forget" pattern is load-bearing — the picker waits for user int
 
 **Persisted popup state** (`chrome.storage.local`):
 - `destination` — `clipboard` or `download`. Set in the popup toggle, read by the content-script `deliver()` so the keyboard-shortcut and popup paths agree.
+- `include_frontmatter` — boolean, default `true`. Set in the popup checkbox, read by `buildMarkdown` in `content.ts`. When `false`, captures are delivered as raw body with no YAML header. The content script reads it on every capture, so both popup-click and keyboard-shortcut paths share the same setting.
 - `last_capture` — `{mode, source, destination, url, domain, title, excerpt (180 chars), charCount, capturedAt}`. Written by `lib/last-capture.ts` after every successful deliver; read on popup open to render the recap card under the status line. Bounded excerpt size keeps the stored payload tiny — page content never leaves the machine.
 
 ## Web architecture
