@@ -66,8 +66,9 @@ export async function captureUrl(page: Page, options: CaptureOptions): Promise<C
   const meta = extractPageMetadata(doc);
   const extracted: ExtractResult = extractMain(doc);
   const body = htmlToMarkdown(extracted.html);
-  const title = (extracted.title ?? meta.title ?? options.url).trim();
+  const title = ((meta.title ?? extracted.title ?? "").trim() || options.url).trim();
   const wordCount = countWords(body);
+  const readingTime = wordCount > 0 ? Math.max(1, Math.round(wordCount / 200)) : undefined;
   const finalUrl = page.url();
   const urlObj = safeUrl(finalUrl) ?? safeUrl(options.url);
 
@@ -78,12 +79,12 @@ export async function captureUrl(page: Page, options: CaptureOptions): Promise<C
       source: finalUrl,
       domain: urlObj?.hostname,
       captured_at: new Date().toISOString(),
-      word_count: wordCount,
-      language: meta.language,
       site: meta.site,
+      language: meta.language,
       author: meta.author,
       published: meta.published,
-      via: "cli",
+      word_count: wordCount || undefined,
+      reading_time_min: readingTime,
       excerpt: buildExcerpt(body),
     };
     markdown = buildFrontmatter(fm) + body;
