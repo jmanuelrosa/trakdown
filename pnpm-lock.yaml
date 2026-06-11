@@ -20,21 +20,24 @@ importers:
         specifier: ^6.0.3
         version: 6.0.3
 
+  apps/cli:
+    dependencies:
+      '@trakdown/core':
+        specifier: workspace:*
+        version: link:../../packages/core
+      linkedom:
+        specifier: ^0.18.0
+        version: 0.18.12
+      playwright-core:
+        specifier: ^1.49.0
+        version: 1.60.0
+
   apps/extension:
     dependencies:
-      '@mozilla/readability':
-        specifier: ^0.6.0
-        version: 0.6.0
-      turndown:
-        specifier: ^7.2.0
-        version: 7.2.4
-      turndown-plugin-gfm:
-        specifier: ^1.0.2
-        version: 1.0.2
+      '@trakdown/core':
+        specifier: workspace:*
+        version: link:../../packages/core
     devDependencies:
-      '@types/turndown':
-        specifier: ^5.0.5
-        version: 5.0.6
       typescript:
         specifier: ^5.6.0
         version: 5.9.3
@@ -57,6 +60,22 @@ importers:
       typescript:
         specifier: ^5.6.0
         version: 5.9.3
+
+  packages/core:
+    dependencies:
+      '@mozilla/readability':
+        specifier: ^0.6.0
+        version: 0.6.0
+      turndown:
+        specifier: ^7.2.0
+        version: 7.2.4
+      turndown-plugin-gfm:
+        specifier: ^1.0.2
+        version: 1.0.2
+    devDependencies:
+      '@types/turndown':
+        specifier: ^5.0.5
+        version: 5.0.6
 
 packages:
 
@@ -2096,6 +2115,11 @@ packages:
 
   pkg-types@2.3.1:
     resolution: {integrity: sha512-y+ichcgc2LrADuhLNAx8DFjVfgz91pRxfZdI3UDhxHvcVEZsenLO+7XaU5vOp0u/7V/wZ+plyuQxtrDlZJ+yeg==}
+
+  playwright-core@1.60.0:
+    resolution: {integrity: sha512-9bW6zvX/m0lEbgTKJ6YppOKx8H3VOPBMOCFh2irXFOT4BbHgrx5hPjwJYLT40Lu+4qtD36qKc/Hn56StUW57IA==}
+    engines: {node: '>=18'}
+    hasBin: true
 
   postcss@8.5.14:
     resolution: {integrity: sha512-SoSL4+OSEtR99LHFZQiJLkT59C5B1amGO1NzTwj7TT1qCUgUO6hxOvzkOYxD+vMrXBM3XJIKzokoERdqQq/Zmg==}
@@ -4856,6 +4880,8 @@ snapshots:
       confbox: 0.2.4
       exsolve: 1.0.8
       pathe: 2.0.3
+
+  playwright-core@1.60.0: {}
 
   postcss@8.5.14:
     dependencies:

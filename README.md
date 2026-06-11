@@ -10,9 +10,9 @@ Free, MIT-licensed. If trakdown earns a spot in your workflow, you can sponsor a
 apps/
   extension/    # Chrome MV3 extension (WXT)
   web/          # Landing page (Astro)
-  cli/          # (planned) Playwright-based CLI for non-auth pages
+  cli/          # Playwright-based CLI — public + authenticated pages
 packages/
-  core/         # (planned) shared HTML→markdown engine
+  core/         # Shared HTML→markdown engine (used by extension and CLI)
 ```
 
 ## Requirements
@@ -27,6 +27,7 @@ pnpm install
 
 pnpm dev:ext       # WXT dev with hot reload (extension)
 pnpm dev:web       # Astro dev server (landing page)
+pnpm cli -- <url>  # run the CLI (see "CLI" section below for usage)
 
 pnpm build         # build all packages
 pnpm build:ext     # extension → apps/extension/.output/chrome-mv3/
@@ -38,6 +39,23 @@ pnpm format        # format only
 ```
 
 Load the extension into Chrome: `chrome://extensions` → enable Developer mode → **Load unpacked** → point at `apps/extension/.output/chrome-mv3/`.
+
+## CLI
+
+`@trakdown/cli` is a Node 22+ CLI that drives Playwright to capture any web page — public or behind a login — as markdown.
+
+```bash
+# Public page
+pnpm cli -- https://example.com
+
+# Authenticated page (opens Chrome, log in, press Enter, capture continues)
+pnpm cli -- https://app.fossa.com/projects/xyz --auth
+
+# Multiple URLs share one login
+pnpm cli -- https://app.fossa.com/projects/a https://app.fossa.com/projects/b --auth -o ./captures/
+```
+
+Flags: `--auth` (open browser + login flow), `-o <path>` (output file or dir), `--no-frontmatter`. See [`apps/cli/README.md`](apps/cli/README.md) for full usage. The CLI uses your installed Chrome via `channel: 'chrome'`; if Chrome isn't present, run `pnpm -F @trakdown/cli exec playwright install chromium` once.
 
 ## Deploy
 
@@ -77,9 +95,10 @@ Dependabot is configured in [`.github/dependabot.yml`](.github/dependabot.yml) i
 
 v0 — Chrome only. Shipping today:
 
-- **Capture modes**: element picker (`⌘⇧K`), text selection (`⌘⇧J`), full page (`⌘⇧Y`), and AI Deep Clean (`⌘⇧U` — opt-in, requires Chrome 138+ with on-device Gemini Nano enabled). Shortcuts are rebindable at `chrome://extensions/shortcuts`.
-- **Output**: clipboard (default) or `.md` download, toggled in the popup and persisted.
-- **Popup**: mode selector, destination toggle, "Include frontmatter" checkbox, AI availability hint, and a recap of the last capture (mode, time, char count, title, 2-line excerpt).
-- **Frontmatter**: every capture starts with YAML containing title, source URL, domain, timestamp, word count, and excerpt — toggleable from the popup for users who want raw body only.
+- **Extension capture modes**: element picker (`⌘⇧K`), text selection (`⌘⇧J`), full page (`⌘⇧Y`), and AI Deep Clean (`⌘⇧U` — opt-in, requires Chrome 138+ with on-device Gemini Nano enabled). Shortcuts are rebindable at `chrome://extensions/shortcuts`.
+- **Extension output**: clipboard (default) or `.md` download, toggled in the popup and persisted.
+- **Extension popup**: mode selector, destination toggle, "Include frontmatter" checkbox, AI availability hint, and a recap of the last capture (mode, time, char count, title, 2-line excerpt).
+- **Frontmatter**: every capture starts with YAML containing title, source URL, domain, timestamp, word count, and excerpt — toggleable for users who want raw body only.
+- **CLI** (`apps/cli/`): Playwright-driven capture for one or many URLs, public pages headless, authenticated pages via headed login (`--auth`). One file per URL, never overwrites, exit code reflects per-URL success.
 
-Next up: Chrome Web Store listing, and the Playwright-based CLI for public pages (`apps/cli/`, deferred to v0.x).
+Next up: Chrome Web Store listing, CLI session persistence, `--selector` for subtree scoping, AI Deep Clean in the CLI.
