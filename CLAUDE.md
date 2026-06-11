@@ -4,17 +4,24 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What this is
 
-trakdown is a Chrome MV3 extension that captures any web page — including authenticated dashboards behind a login — as clean markdown for AI workflows. Three capture modes (element picker, text selection, full page) plus an opt-in AI Deep Clean using Chrome's on-device Gemini Nano. The repo also hosts the landing page at `apps/web`.
+trakdown captures any web page — including authenticated dashboards behind a login — as clean markdown for AI workflows. Two surfaces share one extraction pipeline:
+
+- **Chrome MV3 extension** (`apps/extension/`): element picker, text selection, full page, plus opt-in AI Deep Clean via Chrome's on-device Gemini Nano.
+- **Node 22+ CLI** (`apps/cli/`): Playwright-driven capture for one or many URLs; `--auth` opens a headed Chrome for interactive login. No session persists between invocations.
+
+Both consume `@trakdown/core` (`packages/core/`) for the shared extraction pipeline. The repo also hosts the landing page at `apps/web`.
 
 Brand: [`docs/marketing/brand.md`](docs/marketing/brand.md). Live URL: `https://jmanuelrosa.github.io/trakdown/`.
 
 ## Monorepo layout
 
-pnpm workspaces. Two real apps; `apps/cli/` and `packages/core/` are intentionally not scaffolded (placeholders in `README.md`).
+pnpm workspaces.
 
 ```
 apps/extension/    # Chrome MV3 extension (WXT)
 apps/web/          # Landing page (Astro 5 + Tailwind v4)
+apps/cli/          # Node 22+ CLI (Playwright-core + linkedom + @trakdown/core)
+packages/core/     # Shared HTML→markdown engine (Turndown, Readability, frontmatter, metadata)
 docs/              # Brand, deploy, analytics
 ```
 
@@ -31,6 +38,7 @@ From repo root:
 pnpm install
 pnpm dev:ext           # WXT dev (hot reload)
 pnpm dev:web           # Astro dev at http://localhost:4321/trakdown/
+pnpm cli -- <url>      # run the CLI; pass URLs and flags after the `--`
 pnpm build:ext         # → apps/extension/.output/chrome-mv3/
 pnpm build:web         # → apps/web/dist/
 pnpm build             # build all packages
@@ -40,7 +48,7 @@ pnpm lint:ci           # `biome ci` (CI-tuned variant — used by GitHub Actions
 pnpm format            # format only
 ```
 
-Per-package scripts (`apps/extension/`, `apps/web/`): `dev`, `build`, plus `zip` (extension) and `preview` + `check` (web).
+Per-package scripts (`apps/extension/`, `apps/web/`, `apps/cli/`): `dev`, `build` (extension/web only), plus `zip` (extension), `preview` + `check` (web), `start` (cli — same as `dev`).
 
 There is no test runner. Linting + formatting is handled by **Biome 2.x** (`biome.json` at the repo root). `.astro` files are intentionally excluded — Astro's own tooling handles them while Biome's Astro support stabilises.
 
@@ -55,7 +63,7 @@ WXT-based MV3 extension. Path alias: `@/` resolves to `apps/extension/` (WXT def
 
 This "fire and forget" pattern is load-bearing — the picker waits for user interaction and the AI mode takes 2–5 seconds; both outlast the popup's lifetime.
 
-**Picker, selection, and Readability all flow through the same Turndown + GFM singleton** (`lib/markdown.ts`). AI Deep Clean adds a `lib/preclean.ts` step that aggressively strips DOM noise before feeding to `LanguageModel` (Chrome's Prompt API).
+**Picker, selection, and Readability all flow through the same Turndown + GFM singleton** (re-exported from `@trakdown/core/markdown` via the `lib/markdown.ts` shim). AI Deep Clean adds a `lib/preclean.ts` step that aggressively strips DOM noise before feeding to `LanguageModel` (Chrome's Prompt API). The shared extraction logic (markdown, frontmatter, metadata, the non-AI half of `extract.ts`) lives in `packages/core/`; extension `lib/*` files are thin re-exports plus the extension-only pieces (`ai-extract.ts`, `preclean.ts`, `extractMainWithAi`, etc.).
 
 **Keyboard shortcuts**: `wxt.config.ts` declares four `chrome.commands` — `capture-element` (`⌘⇧K`), `capture-selection` (`⌘⇧J`), `capture-page` (`⌘⇧Y`), `capture-page-ai` (`⌘⇧U`). `background.ts` listens for `chrome.commands.onCommand` and forwards the matching message to the active tab. Users rebind in `chrome://extensions/shortcuts`.
 
@@ -63,6 +71,37 @@ This "fire and forget" pattern is load-bearing — the picker waits for user int
 - `destination` — `clipboard` or `download`. Set in the popup toggle, read by the content-script `deliver()` so the keyboard-shortcut and popup paths agree.
 - `include_frontmatter` — boolean, default `true`. Set in the popup checkbox, read by `buildMarkdown` in `content.ts`. When `false`, captures are delivered as raw body with no YAML header. The content script reads it on every capture, so both popup-click and keyboard-shortcut paths share the same setting.
 - `last_capture` — `{mode, source, destination, url, domain, title, excerpt (180 chars), charCount, capturedAt}`. Written by `lib/last-capture.ts` after every successful deliver; read on popup open to render the recap card under the status line. Bounded excerpt size keeps the stored payload tiny — page content never leaves the machine.
+
+## CLI architecture
+
+Node 22+ ESM. Native TypeScript via `--experimental-strip-types`; no build step. Entry: `apps/cli/src/index.ts` (shebang `#!/usr/bin/env -S node --experimental-strip-types`). Arg parsing via `node:util.parseArgs` (no third-party CLI library).
+
+**Capture flow:**
+1. `parseCliArgs` (`src/args.ts`) reads `--auth`, `--no-frontmatter`, `-o`, positional URLs.
+2. `resolveDestination` (`src/output.ts`) figures out file-vs-dir from `-o` and N URLs; rejects `-o file.md` with N>1.
+3. `CliBrowser` (`src/capture.ts`) launches Playwright via `chromium.launch({ channel: "chrome", headless: !auth })` — reuses the user's installed Chrome (zero download). Falls back with a clear message: `Run: pnpm exec playwright install chromium`.
+4. With `--auth`: open a blank page, prompt `Browser opened … press Enter here to continue`, block on stdin. User logs in interactively; session lives in the BrowserContext for all subsequent captures in this invocation.
+5. Per URL: `page.goto(url, { waitUntil: "load" })` → `page.content()` → parse with linkedom → `extractPageMetadata()` → `extractMain()` → `htmlToMarkdown()` → `buildFrontmatter()`. Cast linkedom's `document` to `Document` at the boundary (`as unknown as Document`) — linkedom is structurally compatible with the DOM types the core lib expects.
+6. Write file with collision suffix (`naming.ts` → `resolveCollision`). Per-URL status (`OK`/`FAILED`) goes to **stderr**; absolute file paths go to **stdout** (one per line). Exit code 1 if any URL failed.
+
+**Playwright binary policy:** ship `playwright-core` (no auto-download postinstall). Reuse system Chrome via `channel: 'chrome'`. **Do not add `playwright` to `allowBuilds:` in `pnpm-workspace.yaml`** — preserves the repo's strict `ignore-scripts=true` posture. Users without Chrome run `pnpm -F @trakdown/cli exec playwright install chromium` once.
+
+**No session persistence between invocations** — by design. Each `--auth` call requires a fresh login. **No login-wall detection** — `--auth` is purely explicit. Persistent profiles, auto-detection, `--selector`, `--wait`, and CLI-side AI Deep Clean are deferred to v1.
+
+**No CI build step.** `pull_request.yml` Biome lint covers the new package via root `biome.json`. No test runner.
+
+## Core package (`packages/core/`)
+
+Plain TypeScript, no build. Consumers (extension and CLI) import `.ts` directly. Package `exports` field maps subpaths:
+- `@trakdown/core` → `src/index.ts` (barrel)
+- `@trakdown/core/markdown` → `src/markdown.ts`
+- `@trakdown/core/frontmatter` → `src/frontmatter.ts`
+- `@trakdown/core/metadata` → `src/metadata.ts`
+- `@trakdown/core/extract` → `src/extract.ts`
+
+Deps owned: `@mozilla/readability`, `turndown`, `turndown-plugin-gfm`. The extension no longer lists these directly — they arrive transitively via `@trakdown/core`.
+
+When updating extraction logic, **edit in `packages/core/src/`** — both consumers pick it up immediately. The extension's `apps/extension/lib/{markdown,frontmatter,metadata}.ts` are pure re-export shims; `lib/extract.ts` re-exports `extractMain`/`ExtractSource`/`ExtractResult` from core and only owns `extractMainWithAi` (AI variant) and `AiCaptureResult` (extension-only types depending on `ai-extract.ts`).
 
 ## Web architecture
 
