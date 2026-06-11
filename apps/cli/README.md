@@ -13,19 +13,23 @@ The CLI uses your installed Chrome browser by default (`channel: 'chrome'`). If 
 
 ## Usage
 
+From the repo root, the easiest invocation is `pnpm cli -- <url>`:
+
 ```bash
 # Public page → writes ./<title-slug>.md
-pnpm -F @trakdown/cli start -- https://example.com
+pnpm cli -- https://example.com
 
 # Authenticated page → opens browser, you log in, press Enter, capture proceeds
-pnpm -F @trakdown/cli start -- https://app.fossa.com/projects/xyz --auth
+pnpm cli -- https://app.fossa.com/projects/xyz --auth
 
 # Multiple URLs in one invocation → one login covers all
-pnpm -F @trakdown/cli start -- https://app.fossa.com/projects/a https://app.fossa.com/projects/b --auth -o ./captures/
+pnpm cli -- https://app.fossa.com/projects/a https://app.fossa.com/projects/b --auth -o ./captures/
 
 # Skip the YAML frontmatter
-pnpm -F @trakdown/cli start -- https://example.com --no-frontmatter
+pnpm cli -- https://example.com --no-frontmatter
 ```
+
+Tip: for any workflow that captures more than one or two pages, pass `-o ./captures/` (or any directory) so files don't pile up in cwd.
 
 ## Flags
 
