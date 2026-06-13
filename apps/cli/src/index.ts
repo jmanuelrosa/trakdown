@@ -1,11 +1,10 @@
-#!/usr/bin/env -S node --experimental-strip-types
 import type { Page } from "playwright-core";
 import { parseCliArgs } from "./args.ts";
 import { CliBrowser, captureUrl, promptForLogin } from "./capture.ts";
 import { resolveCollision, slugifyTitle, slugifyUrl, timestampSlug } from "./naming.ts";
 import { type ResolvedDestination, resolveDestination, writeMarkdown } from "./output.ts";
 
-const VERSION = "0.0.0";
+const VERSION = process.env.TRAKDOWN_VERSION ?? "0.0.0-dev";
 
 const HELP = `trakdown — capture web pages as markdown
 

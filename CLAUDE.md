@@ -74,7 +74,7 @@ This "fire and forget" pattern is load-bearing — the picker waits for user int
 
 ## CLI architecture
 
-Node 22+ ESM. Native TypeScript via `--experimental-strip-types`; no build step. Entry: `apps/cli/src/index.ts` (shebang `#!/usr/bin/env -S node --experimental-strip-types`). Arg parsing via `node:util.parseArgs` (no third-party CLI library).
+Node 22+ ESM. Native TypeScript via `--experimental-strip-types` for local development; an esbuild bundle is produced for npm publishing. Entry: `apps/cli/src/index.ts` (no shebang — dev runs through `pnpm cli` / `pnpm -F @trakdown/cli dev` which explicitly invoke `node --experimental-strip-types`; the build script adds `#!/usr/bin/env node` to the bundled output). Arg parsing via `node:util.parseArgs` (no third-party CLI library).
 
 **Capture flow:**
 1. `parseCliArgs` (`src/args.ts`) reads `--auth`, `--no-frontmatter`, `-o`, positional URLs.
@@ -88,7 +88,9 @@ Node 22+ ESM. Native TypeScript via `--experimental-strip-types`; no build step.
 
 **No session persistence between invocations** — by design. Each `--auth` call requires a fresh login. **No login-wall detection** — `--auth` is purely explicit. Persistent profiles, auto-detection, `--selector`, `--wait`, and CLI-side AI Deep Clean are deferred to v1.
 
-**No CI build step.** `pull_request.yml` Biome lint covers the new package via root `biome.json`. No test runner.
+**Publish pipeline.** `pnpm -F @trakdown/cli build` invokes `apps/cli/scripts/build.mjs`, which esbuilds `src/index.ts` into `dist/index.js` — single ESM file with the `#!/usr/bin/env node` shebang, bundling in `@trakdown/core`, `linkedom`, Readability, and Turndown. Only `playwright-core` stays external (heavy runtime, must come from the user's `node_modules`). The version is inlined at build time via `define: { 'process.env.TRAKDOWN_VERSION': pkg.version }` — `src/index.ts` reads it with a `0.0.0-dev` fallback so running from source still works. `prepublishOnly` runs the build, so `pnpm publish` cannot ship a stale `dist/`. The `files` allowlist publishes only `dist/`, `README.md`, `LICENSE`. `@trakdown/core` and `linkedom` are listed as `devDependencies` so they don't end up as installable deps on the published package (they're already inside the bundle).
+
+**No CI build step.** `pull_request.yml` Biome lint covers the new package via root `biome.json`. The CLI bundle is built locally before publish, not in CI (the publish itself is manual for now). No test runner.
 
 ## Core package (`packages/core/`)
 
