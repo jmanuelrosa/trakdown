@@ -1,18 +1,53 @@
 {
   "name": "@trakdown/cli",
-  "private": true,
-  "version": "0.0.0",
+  "version": "0.1.0",
+  "description": "Capture web pages — public or behind a login — as clean markdown for AI workflows.",
   "type": "module",
   "bin": {
-    "trakdown": "src/index.ts"
+    "trakdown": "./dist/index.js"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "engines": {
+    "node": ">=22"
+  },
+  "keywords": [
+    "markdown",
+    "webpage",
+    "scraper",
+    "playwright",
+    "readability",
+    "ai",
+    "cli",
+    "auth",
+    "capture"
+  ],
+  "author": "Jose Manuel Rosa Moncayo",
+  "license": "MIT",
+  "homepage": "https://jmanuelrosa.github.io/trakdown/",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jmanuelrosa/trakdown.git",
+    "directory": "apps/cli"
+  },
+  "bugs": {
+    "url": "https://github.com/jmanuelrosa/trakdown/issues"
   },
   "scripts": {
     "dev": "node --experimental-strip-types src/index.ts",
-    "start": "node --experimental-strip-types src/index.ts"
+    "start": "node --experimental-strip-types src/index.ts",
+    "build": "node ./scripts/build.mjs",
+    "prepublishOnly": "pnpm run build"
   },
   "dependencies": {
-    "@trakdown/core": "workspace:*",
-    "linkedom": "^0.18.0",
     "playwright-core": "^1.49.0"
+  },
+  "devDependencies": {
+    "@trakdown/core": "workspace:*",
+    "esbuild": "^0.24.0",
+    "linkedom": "^0.18.0"
   }
 }

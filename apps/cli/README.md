@@ -2,31 +2,52 @@
 
 Capture any web page — public or behind a login — as clean markdown.
 
+Requires Node 22+. Uses your installed Chrome by default; falls back to Playwright's bundled Chromium with one extra command.
+
 ## Install
 
+### From npm (recommended)
+
 ```bash
-pnpm install                                  # from the repo root
+# One-off
+pnpm dlx @trakdown/cli <url>
+
+# Or install globally
+pnpm add -g @trakdown/cli
+trakdown <url>
+```
+
+If Chrome isn't installed on your machine, run `pnpm dlx playwright install chromium` once.
+
+### From source (for contributors)
+
+```bash
+pnpm install                                            # from the repo root
 pnpm -F @trakdown/cli exec playwright install chromium  # only if Chrome isn't installed
 ```
 
-The CLI uses your installed Chrome browser by default (`channel: 'chrome'`). If Chrome isn't installed, run the second command to download Playwright's bundled Chromium.
+The CLI uses your installed Chrome browser by default (`channel: 'chrome'`).
 
 ## Usage
 
-From the repo root, the easiest invocation is `pnpm cli -- <url>`:
-
 ```bash
 # Public page → writes ./<title-slug>.md
-pnpm cli -- https://example.com
+trakdown https://example.com
 
 # Authenticated page → opens browser, you log in, press Enter, capture proceeds
-pnpm cli -- https://app.fossa.com/projects/xyz --auth
+trakdown https://app.fossa.com/projects/xyz --auth
 
 # Multiple URLs in one invocation → one login covers all
-pnpm cli -- https://app.fossa.com/projects/a https://app.fossa.com/projects/b --auth -o ./captures/
+trakdown https://app.fossa.com/projects/a https://app.fossa.com/projects/b --auth -o ./captures/
 
 # Skip the YAML frontmatter
-pnpm cli -- https://example.com --no-frontmatter
+trakdown https://example.com --no-frontmatter
+```
+
+From the repo root (working on the CLI itself), use `pnpm cli -- <url>` instead of `trakdown`:
+
+```bash
+pnpm cli -- https://example.com --auth
 ```
 
 Tip: for any workflow that captures more than one or two pages, pass `-o ./captures/` (or any directory) so files don't pile up in cwd.
@@ -56,4 +77,3 @@ Tip: for any workflow that captures more than one or two pages, pass `-o ./captu
 - AI Deep Clean (use the extension)
 - Session persistence across invocations
 - Auto-detection of login walls
-- npm publishing (workspace-only for now)
