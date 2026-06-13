@@ -70,6 +70,17 @@ Tip: for any workflow that captures more than one or two pages, pass `-o ./captu
 - **No session persistence**: each `--auth` invocation requires a fresh login. By design.
 - **No login-wall detection**: `--auth` is required for authenticated pages; without it the CLI captures whatever the public/anonymous page renders (often a login page).
 
+## Releasing
+
+Tag-driven via `.github/workflows/publish-cli.yml`. From a clean `main`:
+
+```bash
+pnpm -F @trakdown/cli version <patch|minor|major>   # bumps version, commits, tags v<x.y.z>
+git push && git push --tags
+```
+
+The workflow runs on tag push: lint, build, verify the tag matches `apps/cli/package.json`, `pnpm publish --access public --no-git-checks --provenance`, then open a GitHub Release with auto-generated notes. To re-run a failed release, delete and re-push the tag.
+
 ## Out of scope (v0)
 
 - `--selector <css>` subtree scoping

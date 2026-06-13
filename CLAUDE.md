@@ -90,7 +90,9 @@ Node 22+ ESM. Native TypeScript via `--experimental-strip-types` for local devel
 
 **Publish pipeline.** `pnpm -F @trakdown/cli build` invokes `apps/cli/scripts/build.mjs`, which esbuilds `src/index.ts` into `dist/index.js` — single ESM file with the `#!/usr/bin/env node` shebang, bundling in `@trakdown/core`, `linkedom`, Readability, and Turndown. Only `playwright-core` stays external (heavy runtime, must come from the user's `node_modules`). The version is inlined at build time via `define: { 'process.env.TRAKDOWN_VERSION': pkg.version }` — `src/index.ts` reads it with a `0.0.0-dev` fallback so running from source still works. `prepublishOnly` runs the build, so `pnpm publish` cannot ship a stale `dist/`. The `files` allowlist publishes only `dist/`, `README.md`, `LICENSE`. `@trakdown/core` and `linkedom` are listed as `devDependencies` so they don't end up as installable deps on the published package (they're already inside the bundle).
 
-**No CI build step.** `pull_request.yml` Biome lint covers the new package via root `biome.json`. The CLI bundle is built locally before publish, not in CI (the publish itself is manual for now). No test runner.
+**Release flow.** Tag-driven via `.github/workflows/publish-cli.yml`. Bump `apps/cli/package.json`, commit, `git tag v<version>`, `git push --tags`. The workflow lints, builds the bundle, verifies the tag matches `package.json`, runs `pnpm publish --access public --no-git-checks --provenance` (auth via `NPM_TOKEN` repo secret), and opens a GitHub Release with auto-generated notes. Re-run a failed release by deleting and re-pushing the tag. OIDC trusted publishing is the planned successor to `NPM_TOKEN` once the package is established on npm.
+
+**No CI build step on PRs.** `pull_request.yml` runs Biome lint only via root `biome.json`. The CLI bundle is built at release time inside `publish-cli.yml`, plus locally for testing. No test runner.
 
 ## Core package (`packages/core/`)
 
