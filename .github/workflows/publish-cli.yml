@@ -1,0 +1,64 @@
+name: Publish CLI to npm
+
+# Tag push only. To release: bump apps/cli/package.json version,
+# commit, tag with the matching `v<version>`, push the tag.
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: write     # gh release create
+  id-token: write     # npm --provenance attestation
+
+concurrency:
+  group: publish-cli
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    # NPM_TOKEN lives in the `production` environment, scoped so only
+    # workflows that opt in can read it (matches deploy-web.yml).
+    environment: production
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          # Full history so `gh release --generate-notes` can read the
+          # commits between this tag and the previous one.
+          fetch-depth: 0
+
+      - id: setup
+        uses: ./.github/actions/setup-node
+
+      # The shared composite doesn't take a registry-url; configure
+      # the npm registry here so .npmrc points NODE_AUTH_TOKEN at the
+      # right place. The pnpm/Node caches are already warm.
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: '.nvmrc'
+          registry-url: 'https://registry.npmjs.org'
+
+      - name: Lint
+        run: pnpm lint:ci
+
+      - name: Build CLI bundle
+        run: pnpm -F @trakdown/cli build
+
+      - name: Verify tag matches package.json version
+        run: |
+          PKG_VERSION=$(node -p "require('./apps/cli/package.json').version")
+          TAG_VERSION="${GITHUB_REF_NAME#v}"
+          if [ "$PKG_VERSION" != "$TAG_VERSION" ]; then
+            echo "Tag $GITHUB_REF_NAME does not match apps/cli/package.json version $PKG_VERSION" >&2
+            exit 1
+          fi
+
+      - name: Publish to npm
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: pnpm -F @trakdown/cli publish --access public --no-git-checks --provenance
+
+      - name: Create GitHub Release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: gh release create "$GITHUB_REF_NAME" --generate-notes
