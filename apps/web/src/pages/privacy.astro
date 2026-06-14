@@ -1,0 +1,89 @@
+---
+import Base from "../layouts/Base.astro";
+import Footer from "../components/Footer.astro";
+
+const title = "Privacy — trakdown";
+const description = "trakdown's privacy policy: what the extension touches, where data goes, what it stores, and why it doesn't phone home.";
+const lastUpdated = "2026-06-14";
+---
+
+<Base title={title} description={description}>
+  <main class="px-6 pt-16 pb-20 sm:pt-24 sm:pb-24">
+    <article class="prose-column">
+      <p class="sectionrule">Privacy</p>
+      <h1 class="display-xl mt-6">What the extension touches, and what it doesn't.</h1>
+      <p class="small mt-4">Last updated <time datetime={lastUpdated}>{lastUpdated}</time>.</p>
+
+      <p class="lede mt-10">
+        trakdown runs entirely in your browser. It reads the page you're looking at when you trigger a capture, turns it into markdown, and hands the result to your clipboard or your Downloads folder. That's the whole story.
+      </p>
+
+      <h2 class="display-md mt-14">What we read</h2>
+      <p class="body-text mt-3">
+        When you trigger one of the four capture modes (picker, selection, page, or AI page), the extension reads the DOM of the active tab, plus your current text selection if there is one. Nothing is read until you ask for a capture. No background scraping, no automatic indexing.
+      </p>
+
+      <h2 class="display-md mt-14">Where it goes</h2>
+      <p class="body-text mt-3">
+        The resulting markdown goes to one of two destinations, set by the toggle in the popup:
+      </p>
+      <ul class="body-text mt-3 list-disc pl-6">
+        <li><strong>Clipboard.</strong> Written via the standard Clipboard API. trakdown does not send it anywhere else.</li>
+        <li><strong>Download.</strong> Saved to your default Downloads folder using Chrome's download flow. trakdown does not upload the file anywhere.</li>
+      </ul>
+      <p class="body-text mt-3">
+        Page content never leaves your machine. There is no trakdown server, no third-party API call, no analytics ping carrying the content of what you captured.
+      </p>
+
+      <h2 class="display-md mt-14">What we store</h2>
+      <p class="body-text mt-3">
+        trakdown writes three keys to <code>chrome.storage.local</code>. This storage is per-browser-profile and never syncs across devices.
+      </p>
+      <ul class="body-text mt-3 list-disc pl-6">
+        <li><code>destination</code> — your clipboard/download preference.</li>
+        <li><code>include_frontmatter</code> — whether captures include a YAML header.</li>
+        <li><code>last_capture</code> — a small recap card shown when you reopen the popup. Contains the source URL, page title, capture mode, character count, and a 180-character excerpt. The excerpt cap is deliberate: enough to recognise what you captured, not enough to hold an article.</li>
+      </ul>
+      <p class="body-text mt-3">
+        Clear any of these by uninstalling the extension or by removing the storage entries from <code>chrome://extensions</code> &rarr; trakdown &rarr; details.
+      </p>
+
+      <h2 class="display-md mt-14">AI Deep Clean</h2>
+      <p class="body-text mt-3">
+        The optional "AI page" mode passes the pre-cleaned DOM through Chrome's built-in <code>LanguageModel</code> API (Gemini Nano), which runs <em>on your device</em>. No network request is made. If your Chrome doesn't have the model available, the mode falls back to the non-AI extractor with a clear notice.
+      </p>
+
+      <h2 class="display-md mt-14">Permissions, and why</h2>
+      <p class="body-text mt-3">
+        trakdown declares exactly four permissions in its manifest. No host permissions, no broad URL match patterns, no <code>scripting</code> permission.
+      </p>
+      <ul class="body-text mt-3 list-disc pl-6">
+        <li><code>activeTab</code> — read the DOM of the page you invoked the extension on. Scoped to that tab, only after you act.</li>
+        <li><code>storage</code> — for the three keys listed above.</li>
+        <li><code>clipboardWrite</code> — to put the markdown on your clipboard when that's the chosen destination.</li>
+        <li><code>offscreen</code> — to run DOM parsing and large-string work outside the popup, so the popup can close instantly without losing the in-flight capture.</li>
+      </ul>
+
+      <h2 class="display-md mt-14">No analytics in the extension</h2>
+      <p class="body-text mt-3">
+        The landing page at jmanuelrosa.github.io/trakdown uses Umami Cloud for aggregate page-view analytics. The extension itself ships no analytics, no telemetry, no error reporting, no remote logging. Once installed, it doesn't talk to any server we run, because we don't run any.
+      </p>
+
+      <h2 class="display-md mt-14">Children</h2>
+      <p class="body-text mt-3">
+        trakdown is a developer tool and is not directed at children under 13. It collects no personal information regardless of the user's age.
+      </p>
+
+      <h2 class="display-md mt-14">Changes</h2>
+      <p class="body-text mt-3">
+        If this policy changes, the new version is posted here and the "Last updated" date above changes. There is no mailing list to notify, by design.
+      </p>
+
+      <h2 class="display-md mt-14">Contact</h2>
+      <p class="body-text mt-3">
+        Open an issue at <a href="https://github.com/jmanuelrosa/trakdown/issues">github.com/jmanuelrosa/trakdown/issues</a>. The source code is public; the privacy posture above is verifiable by reading it.
+      </p>
+    </article>
+  </main>
+  <Footer />
+</Base>
