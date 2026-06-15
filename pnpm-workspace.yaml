@@ -36,3 +36,15 @@ overrides:
   # The extension loses Rolldown's speedup until @tailwindcss/vite supports
   # Vite 8 / Rolldown, at which point this override can drop.
   "vite": "7.3.3"
+  # wxt 0.20.26 → web-ext-run 0.2.4 → fx-runner 1.4.0 still pulls
+  # shell-quote@1.7.3, which has GHSA-22jh-h9gv-2pmw (critical RCE via
+  # unescaped newlines in object .op values). Patched in 1.8.4. The
+  # affected code path only runs through wxt's Firefox dev runner, which
+  # we never invoke (Chrome MV3 only), but the override silences the
+  # advisory and removes the residual risk. Drop once web-ext-run bumps.
+  "shell-quote": "1.8.4"
+  # wxt 0.20.26 → web-ext-run 0.2.4 still pulls tmp@0.2.5, which has
+  # GHSA-52f5-9888-hmc6 (path traversal via unsanitized prefix/postfix).
+  # Patched in 0.2.6. Same dev-only surface as shell-quote above. Drop
+  # once web-ext-run bumps.
+  "tmp": "0.2.6"
