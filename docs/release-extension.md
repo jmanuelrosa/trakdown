@@ -2,6 +2,101 @@
 
 The Chrome MV3 extension lives at `apps/extension/`. Releases go to the Chrome Web Store via manual upload to the developer console. The Publisher API is available but isn't worth wiring up until the release cadence justifies it.
 
+## First submission — pick up here
+
+> Status snapshot. Delete this section once the first listing is live; everything below stays for future releases.
+
+The repo prep is done (privacy page, version `0.1.0`, listing copy, walkthrough). What's left is browser + dev-console work. Check each item off as you go.
+
+### 0. Confirm the privacy page is live
+
+- [ ] Open https://jmanuelrosa.github.io/trakdown/privacy and confirm it renders inside the site shell, with the Privacy link in the footer.
+- [ ] If it 404s, check https://github.com/jmanuelrosa/trakdown/actions/workflows/deploy-web.yml — the deploy runs on every push to `main`, so a recent merge should have triggered it.
+
+### 1. Capture screenshots
+
+Four shots (one is optional). Format: PNG, 1280×800.
+
+```bash
+git switch main && git pull
+pnpm install
+pnpm -F @trakdown/extension build
+# Chrome → chrome://extensions → enable Developer mode → "Load unpacked"
+# → point at apps/extension/.output/chrome-mv3/
+mkdir -p docs/marketing/screenshots
+```
+
+Open any public page (so nothing private leaks into the listing) and capture:
+
+- [ ] `cws-1.png` — picker (⌘⇧K), teal overlay on a real element.
+- [ ] `cws-2.png` — toolbar popup open, destination + frontmatter toggles visible, last-capture card showing if there's a recent capture.
+- [ ] `cws-3.png` — captured markdown open in VS Code or Obsidian (so a reviewer sees the structured output: fenced code, tables, source URL).
+- [ ] `cws-4.png` (optional) — on-page toast confirmation after a keyboard-shortcut capture.
+
+Tip for sizing: macOS `⌘⇧4` then drag is fine; for pixel-exact 1280×800, Chrome DevTools → Cmd Palette → "Capture full size screenshot" with the viewport set to that size.
+
+Commit the screenshots:
+
+```bash
+git switch -c docs/cws-screenshots
+git add docs/marketing/screenshots/
+git commit  # use /commit
+# then /pr, merge
+```
+
+### 2. Create the CWS developer account (skip if done)
+
+- [ ] https://chrome.google.com/webstore/devconsole
+- [ ] Pay the one-time $5 registration fee with the Google account that will own the listing.
+- [ ] Complete identity verification. Can take a day or two on first signup.
+
+### 3. Build the upload zip
+
+```bash
+git switch main && git pull
+pnpm install
+pnpm -F @trakdown/extension build
+pnpm -F @trakdown/extension zip
+```
+
+- [ ] Output appears at `apps/extension/.output/<name>-0.1.0-chrome.zip`.
+- [ ] Crack open `manifest.json` inside the zip and confirm `"version": "0.1.0"` and the four permissions (`activeTab`, `clipboardWrite`, `offscreen`, `storage`).
+
+### 4. Fill the listing
+
+Open the dev console → "Add new item" → upload the zip. Then paste from [`docs/marketing/chrome-web-store.md`](./marketing/chrome-web-store.md):
+
+- [ ] Name
+- [ ] Summary (≤ 132 chars)
+- [ ] Detailed description
+- [ ] Category: Productivity
+- [ ] Language: English
+- [ ] Single purpose statement
+- [ ] Per-permission justifications for each of the four perms
+- [ ] Remote code: No
+- [ ] Data privacy matrix (all "No") and the three certification checkboxes
+- [ ] Homepage URL: `https://jmanuelrosa.github.io/trakdown/`
+- [ ] Privacy policy URL: `https://jmanuelrosa.github.io/trakdown/privacy`
+- [ ] Support URL: `https://github.com/jmanuelrosa/trakdown/issues`
+- [ ] Upload the screenshots from step 1
+
+### 5. Submit and wait
+
+- [ ] Click "Submit for review".
+- [ ] First review can take days to weeks. After it lands, updates are typically same-day.
+
+### 6. After approval
+
+- [ ] Copy the public listing URL.
+- [ ] Update the install CTA in `apps/web/src/components/Hero.astro` to point at the real store entry.
+- [ ] Update the README install badge / link.
+- [ ] Tag the release for history:
+  ```bash
+  git tag extension-v0.1.0
+  git push --tags
+  ```
+- [ ] Delete this "First submission" section from `docs/release-extension.md`.
+
 ## One-time setup
 
 Owner-side, not in the repo:
